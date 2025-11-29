@@ -1,6 +1,6 @@
 import torch
 from threading import Timer
-from transformers import Qwen3VLForConditionalGeneration, AutoProcessor
+from transformers import Qwen3VLForConditionalGeneration, AutoProcessor, AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 
 MODEL_TTL_SECONDS = 600  # 10 minutes
 
@@ -65,10 +65,59 @@ def _load_qwen():
     processor = AutoProcessor.from_pretrained(model_name)
     return model, processor
 
+def _load_llama():
+    print("[INFO] Loading Llama 3.1 8B model into memory...")
+
+    model_id = "meta-llama/Meta-Llama-3.1-8B-Instruct"
+
+    tokenizer = AutoTokenizer.from_pretrained(model_id)
+
+    model = AutoModelForCausalLM.from_pretrained(
+        model_id,
+        torch_dtype=torch.bfloat16,
+        device_map="auto",
+    )
+
+    return model, tokenizer
+
+
+def _load_gpt_oss():
+    """
+    Load openai/gpt-oss-20b in 8-bit with bitsandbytes.
+    Returns (model, tokenizer).
+    """
+    print("[INFO] Loading gpt-oss-20b (8-bit) into memory...")
+
+    model_id = "openai/gpt-oss-20b"
+
+    # 8-bit quantization config
+    bnb_config = BitsAndBytesConfig(
+        load_in_8bit=True,
+        llm_int8_threshold=6.0,
+    )
+
+    tokenizer = AutoTokenizer.from_pretrained(model_id)
+
+    # Make sure pad_token exists to avoid warnings
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+    model = AutoModelForCausalLM.from_pretrained(
+        model_id,
+        quantization_config=bnb_config,
+        device_map="auto",
+    )
+
+    model.eval()
+    return model, tokenizer
+
+
 
 # Map from logical model name → loader function
 MODEL_LOADERS = {
     "qwen": _load_qwen,
+    "llama_3.1_8B": _load_llama,
+    "gpt_oss": _load_gpt_oss,
 }
 
 
