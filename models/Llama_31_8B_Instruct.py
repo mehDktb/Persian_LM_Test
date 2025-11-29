@@ -1,4 +1,5 @@
 from model_manager import get_model, _schedule_auto_unload
+import torch
 
 def llama_chat(text: str) -> str:
     """
