@@ -1,3 +1,5 @@
+from model_manager import _schedule_auto_unload
+
 def qwen_chat(text: str) -> str:
     """
     Run a single-turn chat with Qwen3-VL-8B-Instruct.
