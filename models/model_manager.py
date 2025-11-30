@@ -83,29 +83,26 @@ def _load_llama():
 
 def _load_gpt_oss():
     """
-    Load openai/gpt-oss-20b in 8-bit with bitsandbytes.
+    Load openai/gpt-oss-20b with its own quantization (MxFP4).
     Returns (model, tokenizer).
     """
-    print("[INFO] Loading gpt-oss-20b (8-bit) into memory...")
+    print("[INFO] Loading gpt-oss-20b into memory (MxFP4)...")
 
-    model_id = "openai/gpt-oss-20b"
+    model_path = "/home/ubuntu/model/gpt-oss-20b"
 
-    # 8-bit quantization config
-    bnb_config = BitsAndBytesConfig(
-        load_in_8bit=True,
-        llm_int8_threshold=6.0,
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_path,
+        local_files_only=True,
     )
 
-    tokenizer = AutoTokenizer.from_pretrained(model_id)
-
-    # Make sure pad_token exists to avoid warnings
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
     model = AutoModelForCausalLM.from_pretrained(
-        model_id,
-        quantization_config=bnb_config,
+        model_path,
         device_map="auto",
+        torch_dtype="auto",
+        local_files_only=True,
     )
 
     model.eval()
