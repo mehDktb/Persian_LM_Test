@@ -1,4 +1,4 @@
-from model_manager import _schedule_auto_unload, get_model
+from .model_manager import _schedule_auto_unload, get_model
 
 def qwen_chat(text: str) -> str:
     """

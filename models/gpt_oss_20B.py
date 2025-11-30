@@ -1,5 +1,5 @@
 import torch
-from model_manager import get_model, _schedule_auto_unload
+from .model_manager import get_model, _schedule_auto_unload
 
 def gpt_oss_chat(
     text: str,
