@@ -281,53 +281,57 @@ def qwen_sql_from_nl(user_text: str, schema: str = SQL_SCHEMA) -> str:
     Convert a natural-language request (Persian or English) into a T-SQL query
     using Qwen3-VL-8B-Instruct, given a database schema.
     """
-
     model, processor = get_model("qwen")
 
     system_prompt = SQL_SYSTEM_PROMPT
 
+    # Use list-of-segments format for both system and user
     messages = [
         {
             "role": "system",
-            "content": system_prompt,
+            "content": [
+                {"type": "text", "text": system_prompt},
+            ],
         },
         {
             "role": "user",
             "content": [
-                {
-                    "type": "text",
-                    # e.g. "همه فاکتورهایی که مبلغ خالص بالاتر از ۵۰ میلیون دارند را برگردان"
-                    "text": user_text,
-                }
+                {"type": "text", "text": user_text},
             ],
         },
     ]
 
-    inputs = processor.apply_chat_template(
+    # 1) Build chat prompt string
+    chat_text = processor.apply_chat_template(
         messages,
-        tokenize=True,
+        tokenize=False,              # get plain text, not tensors
         add_generation_prompt=True,
-        return_dict=True,
+    )
+
+    # 2) Tokenize – IMPORTANT: use keyword argument text=..., and images=None
+    inputs = processor(
+        text=[chat_text],            # or text=chat_text, but list is safer (batch dim)
+        images=None,
         return_tensors="pt",
     )
 
-    # Move tensors to same device as the model
+    # 3) Move tensors to model device
     inputs = {k: v.to(model.device) for k, v in inputs.items()}
 
+    # 4) Generate
     generated_ids = model.generate(
         **inputs,
         max_new_tokens=256,
         do_sample=False,
         top_p=1.0,
-        temperature=0,  # lower temp for more deterministic SQL
+        temperature=0.0,
     )
 
-    # Remove prompt tokens
-    generated_ids_trimmed = [
-        out_ids[len(in_ids):]
-        for in_ids, out_ids in zip(inputs["input_ids"], generated_ids)
-    ]
+    # 5) Strip prompt tokens
+    prompt_len = inputs["input_ids"].shape[1]
+    generated_ids_trimmed = generated_ids[:, prompt_len:]
 
+    # 6) Decode
     output_text = processor.batch_decode(
         generated_ids_trimmed,
         skip_special_tokens=True,
@@ -338,11 +342,9 @@ def qwen_sql_from_nl(user_text: str, schema: str = SQL_SCHEMA) -> str:
 
     sql = output_text[0].strip()
 
-    # If model wraps in ```sql ... ``` remove that
+    # 7) Clean ```sql fences if present
     if sql.startswith("```"):
-        # remove leading/trailing backticks
         sql = sql.strip("`")
-        # sometimes first line is "sql"
         lines = sql.splitlines()
         if lines and lines[0].strip().lower() in ("sql", "tsql", "t-sql"):
             sql = "\n".join(lines[1:]).strip()
