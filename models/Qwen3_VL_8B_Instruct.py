@@ -255,7 +255,7 @@ CREATE TABLE [dbo].[Customers](
 """
 
 
-SQL_SYSTEM_PROMPT = """
+SQL_SYSTEM_PROMPT = f"""
 You are an expert Microsoft SQL Server (T-SQL) database administrator.
 
 You will receive:
@@ -272,7 +272,7 @@ Your task:
 - Do NOT return anything except the SQL code itself.
 
 Database schema:
-{schema}
+{SQL_SCHEMA}
 """
 
 
@@ -284,17 +284,12 @@ def qwen_sql_from_nl(user_text: str, schema: str = SQL_SCHEMA) -> str:
 
     model, processor = get_model("qwen")
 
-    system_prompt = SQL_SYSTEM_PROMPT.format(schema=schema)
+    system_prompt = SQL_SYSTEM_PROMPT
 
     messages = [
         {
             "role": "system",
-            "content": [
-                {
-                    "type": "text",
-                    "text": system_prompt,
-                }
-            ],
+            "content": system_prompt,
         },
         {
             "role": "user",
@@ -322,9 +317,9 @@ def qwen_sql_from_nl(user_text: str, schema: str = SQL_SCHEMA) -> str:
     generated_ids = model.generate(
         **inputs,
         max_new_tokens=256,
-        do_sample=True,
-        top_p=0.9,
-        temperature=0.3,  # lower temp for more deterministic SQL
+        do_sample=False,
+        top_p=1.0,
+        temperature=0,  # lower temp for more deterministic SQL
     )
 
     # Remove prompt tokens
@@ -388,7 +383,7 @@ def qwen_chat(text: str) -> str:
 
     generated_ids = model.generate(
         **inputs,
-        max_new_tokens=256,
+        max_new_tokens=1024,
         do_sample=True,
         top_p=0.9,
         temperature=0.7,
