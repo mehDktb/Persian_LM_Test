@@ -1,0 +1,393 @@
+Prompt: محصولاتی که قیمت انها بیشتر از پنجاه هزار تومان است و در ماه ابان ۱۴۰۰ به شرکت الف فروخته ایم.
+Response: []
+########################################
+Prompt: چه شرکت هایی بیشترین خرید ها را از ما داشته اند
+Response: []
+########################################
+Prompt: پر فروش ترین محصول ما در تابستان ۱۴۰۰ چه محصولی بوده و چقدر فروخته ایم
+Response: []
+########################################
+Prompt: چه شرکت هایی هنوز به طور کامل با ما تسویه نکرده اند
+Response: []
+########################################
+Prompt: در سال ۱۴۰۰ مجموعا چقدر مالیات پرداخت کرده ایم
+Response: []
+########################################
+Prompt: اخرین فاکتور شرکت الف کدام است
+Response: ```sql
+SELECT TOP 1 
+    [Id] AS کدسیستم_صورتحساب,
+    [TaxId] AS شناسه_یکتای_صورتحساب,
+    [FactorNumber] AS شماره_سریال_صورتحساب,
+    [CreateDateJalali] AS تاریخ_صورتحساب,
+    [InvoiceType] AS نوع_صورتحساب,
+    [Pattern] AS الگو_صورتحساب,
+    [Subject] AS موضوع_صورتحساب,
+    [CustomerId] AS کلیدخارجی_خریدار,
+    [PaymentMethod] AS روش_پرداخت,
+    [Naghdi] AS نقدی,
+    [Nesiye] AS نسیه,
+    [ContractCode] AS کد_قرارداد,
+    [DeliveryStatus] AS وضعیت_ارسال,
+    [DeliveryResult] AS نتیجه_ارسال,
+    [Description] AS توضیحات_فاکتور,
+    [LastUpdateJalali] AS زمان_تغییر_صورتحساب,
+    [UpdateBy] AS کاربر_تغییر_صورتحساب,
+    [TotalDiscount] AS جمع_تخفیف_صورتحساب,
+    [TotalPrice] AS جمع_مبلغ_صورتحساب,
+    [TotalTax] AS جمع_مالیات_صورتحساب,
+    [NetValue] AS جمع_خالص_صورتحساب,
+    [ShowInList] AS موثر_در_محاسبه,
+    [CustomCode] AS شماره_دستی_صورتحساب,
+    [SendDateJalali] AS زمان_ارسال_به_دارایی
+FROM 
+    [dbo].[Invoices]
+WHERE 
+    [ShowInList] = 1
+    AND [CustomerId] = (SELECT [Id] FROM [dbo].[Customers] WHERE [Name] = 'شرکت الف')
+ORDER BY 
+    [CreateDateJalali] DESC;
+```
+########################################
+Prompt: محبوب ترین محصولات کدام اند
+Response: []
+########################################
+Prompt: جزئیات اخرین خرید شرکت الف را نمایش بده
+Response: []
+########################################
+Prompt: ایا شرکتی به اسم  خزر از ما خرید کرده است ؟
+Response: []
+########################################
+Prompt: تا به حال چه شرکت هایی از ما خرید کرده اند
+Response: []
+########################################
+Prompt: در یک ماه گذشته چه شرکت هایی از ما خرید کرده اند
+Response: []
+########################################
+Prompt: در یک سال گذشته چند فاکتور صادر شده
+Response: []
+########################################
+Prompt: مجموع فروش و مالیات شرکت تا الان چقدر بوده
+Response: []
+########################################
+Prompt: اطلاعات تمام مشتریانی که در اسمشان تحقیق است را نمایش بده
+Response: []
+########################################
+Prompt: شماره موبایل و شماره ثابت ده مشتری برتر را نمایش بده
+Response: []
+########################################
+Prompt: این ماه از محصول الف چقدر بیشتر از ماه قبل فروخته ایم
+Response: []
+########################################
+Prompt: مجموع مبلغ و تعداد فروش هر محصول را به تفکیک محصول نمایش دهید
+Response: []
+########################################
+Prompt: محصولاتی که موجودی انها کمتر از ده است
+Response: []
+########################################
+Prompt: جزئیات فاکتور هایی که شامل محصولی با نام لپتاپ است
+Response: ```sql
+SELECT 
+    I.Id AS کدسیستم_صورتحساب,
+    I.TaxId AS شناسه_یکتای_صورتحساب,
+    I.FactorNumber AS شماره_سریال_صورتحساب,
+    I.CreateDateJalali AS تاریخ_صورتحساب,
+    I.InvoiceType AS نوع_صورتحساب,
+    I.Pattern AS الگو_صورتحساب,
+    I.Subject AS موضوع_صورتحساب,
+    I.CustomerId AS کلیدخارجی_خریدار,
+    I.PaymentMethod AS روش_پرداخت,
+    I.Naghdi AS نقدی,
+    I.Nesiye AS نسیه,
+    I.ContractCode AS کد_قرارداد,
+    I.DeliveryStatus AS وضعیت_ارسال,
+    I.DeliveryResult AS نتیجه_ارسال,
+    I.Description AS توضیحات_فاکتور,
+    I.LastUpdateJalali AS زمان_تغییر_صورتحساب,
+    I.UpdateBy AS کاربر_تغییر_صورتحساب,
+    I.TotalDiscount AS جمع_تخفیف_صورتحساب,
+    I.TotalPrice AS جمع_مبلغ_صورتحساب,
+    I.TotalTax AS جمع_مالیات_صورتحساب,
+    I.NetValue AS جمع_خالص_صورتحساب,
+    I.ShowInList AS موثر_در_محاسبه,
+    I.CustomCode AS شماره_دستی_صورتحساب,
+    I.SendDateJalali AS زمان_ارسال_به_دارایی
+FROM 
+    Invoices I
+JOIN 
+    InvoiceItems II ON I.Id = II.InvoceId
+JOIN 
+    Goods G ON II.GoodId = G.Id
+WHERE 
+    I.ShowInList = 1 AND G.UserDescription LIKE '%لپتاپ%'
+```
+########################################
+Prompt: محصولاتی که قیمت انها بیشتر از ۱۰۰۰۰۰۰ تومان است را نمایش بده
+Response: []
+########################################
+Prompt: فاکتور هایی که در تاریخ فلان صادر شده اند
+Response: []
+########################################
+Prompt: تمام محصولاتی که شرکت فلان خریده
+Response: []
+########################################
+Prompt: تمام فاکتور هایی که قیمت انها بیشتر از فلان تومان است
+Response: []
+########################################
+Prompt: تمام فاکتور هایی که در انها محصولی با قیمت بیشتر از فلان است
+Response: []
+########################################
+Prompt: تمام فاکتور هایی که در انها بیشتر از ده کالا فروخته شده است
+Response: ```sql
+SELECT 
+    I.Id AS کدسیستم_صورتحساب,
+    I.TaxId AS شناسه_یکتای_صورتحساب,
+    I.FactorNumber AS شماره_سریال_صورتحساب,
+    I.CreateDateJalali AS تاریخ_صورتحساب,
+    I.InvoiceType AS نوع_صورتحساب,
+    I.Pattern AS الگو_صورتحساب,
+    I.Subject AS موضوع_صورتحساب,
+    I.CustomerId AS کلیدخارجی_خریدار,
+    I.PaymentMethod AS روش_پرداخت,
+    I.Naghdi AS نقدی,
+    I.Nesiye AS نسیه,
+    I.ContractCode AS کد_قرارداد,
+    I.DeliveryStatus AS وضعیت_ارسال,
+    I.DeliveryResult AS نتیجه_ارسال,
+    I.Description AS توضیحات_فاکتور,
+    I.LastUpdateJalali AS زمان_تغییر_صورتحساب,
+    I.UpdateBy AS کاربر_تغییر_صورتحساب,
+    I.TotalDiscount AS جمع_تخفیف_صورتحساب,
+    I.TotalPrice AS جمع_مبلغ_صورتحساب,
+    I.TotalTax AS جمع_مالیات_صورتحساب,
+    I.NetValue AS جمع_خالص_صورتحساب,
+    I.ShowInList AS موثر_در_محاسبه,
+    I.CustomCode AS شماره_دستی_صورتحساب,
+    I.SendDateJalali AS زمان_ارسال_به_دارایی
+FROM 
+    Invoices I
+WHERE 
+    I.ShowInList = 1 AND 
+    (SELECT COUNT(*) FROM InvoiceItems II WHERE II.InvoceId = I.Id) > 10;
+```
+########################################
+Prompt: محصولاتی که مجموع فروش انها بیشتر از فلان عدد بوده است
+Response: []
+########################################
+Prompt: تمام محصولات به همراه تعداد فروش و مجموع مبلغ فروش آنها را نمایش دهید. این اطلاعات باید به تفکیک هر محصول و بر اساس تاریخ فاکتور مرتب شده باشد.
+Response: []
+########################################
+Prompt: مشتریانی که حد اقل ده خرید در سال گذشته داشتند
+Response: []
+########################################
+Prompt: محصولاتی که تا به حال توسط هیچ مشتری ای خریداری نشده اند
+Response: []
+########################################
+Prompt: لیست تمام محصولات به همراه مقدار موجودی و تعداد فروخته شده از هر کدام
+Response: []
+########################################
+Prompt: مشتریانی که در ماه گذشته سه فاکتور یا بیشتر خرید داشته اند
+Response: []
+########################################
+Prompt: هر مشتری کدام محصول را بیشتر خریده است
+Response: []
+########################################
+Prompt: لیست تمام سفارشاتی که در بازه یک ماه گذشته ثبت شده اند
+Response: []
+########################################
+Prompt: درامد خالص در ماه گذشته چقدر بوده است
+Response: []
+########################################
+Prompt: کالاهایی که نرخ مالیات آن‌ها بیشتر از ۹ درصد و میزان تخفیفشان از ۵۰ درصد بیشتر است.
+Response: []
+########################################
+Prompt: لیستی از کالاهایی که بیشترین میزان فروش در سال گذشته را داشته‌اند
+Response: []
+########################################
+Prompt: گزارشی از مجموع درآمد و مالیات پرداخت شده برای تمامی صورتحساب‌های قراردادی ایجاد شده در الگوی اول طی سه ماه گذشته که وضعیت تحویل کالا را تایید کرده‌اند تهیه کنید.
+Response: ```sql
+SELECT 
+    SUM(i.Naghdi) AS TotalIncome, 
+    SUM(i.TotalTax) AS TotalTaxPaid
+FROM 
+    Invoices AS i
+WHERE 
+    i.Pattern = 1 
+    AND i.DeliveryStatus = 3 
+    AND i.CreateDateJalali >= DATEADD(MONTH, -3, GETDATE())
+    AND i.ShowInList = 1
+```
+########################################
+Prompt: لیست همه مشتریانی که محصول به آن ها ارسال شده و کد ملی آن ها با 123 شروع می‌شود را بگیر.
+Response: []
+########################################
+Prompt: کالاهایی که بیشترین نرخ مالیات را دارند.
+Response: []
+########################################
+Prompt: صورتحساب‌های دریافتی که روش پرداخت آن‌ها نقدی یا نسیه/نقدی است و نوع الگوی آن‌ها صادرات است را ارائه کنید.
+Response: ```sql
+SELECT 
+    [Id] AS کدسیستم_صورتحساب,
+    [TaxId] AS شناسه_یکتای_صورتحساب,
+    [FactorNumber] AS شماره_سریال_صورتحساب,
+    [CreateDateJalali] AS تاریخ_صورتحساب,
+    [InvoiceType] AS نوع_صورتحساب,
+    [Pattern] AS الگو_صورتحساب,
+    [Subject] AS موضوع_صورتحساب,
+    [CustomerId] AS کلیدخارجی_خریدار,
+    [PaymentMethod] AS روش_پرداخت,
+    [Naghdi] AS نقدی,
+    [Nesiye] AS نسیه,
+    [ContractCode] AS کد_قرارداد,
+    [DeliveryStatus] AS وضعیت_ارسال,
+    [DeliveryResult] AS نتیجه_ارسال,
+    [Description] AS توضیحات_فاکتور,
+    [LastUpdateJalali] AS زمان_تغییر_صورتحساب,
+    [UpdateBy] AS کاربر_تغییر_صورتحساب,
+    [TotalDiscount] AS جمع_تخفیف_صورتحساب,
+    [TotalPrice] AS جمع_مبلغ_صورتحساب,
+    [TotalTax] AS جمع_مالیات_صورتحساب,
+    [NetValue] AS جمع_خالص_صورتحساب,
+    [ShowInList] AS موثر_در_محاسبه,
+    [CustomCode] AS شماره_دستی_صورتحساب,
+    [SendDateJalali] AS زمان_ارسال_به_دارایی
+FROM 
+    [dbo].[Invoices]
+WHERE 
+    [ShowInList] = 1 
+    AND [PaymentMethod] IN (1, 3) 
+    AND [Pattern] = 7;
+```
+########################################
+Prompt: لیستی از مشتریانی را که در سه ماه اخیر خرید داشته‌اند و نوع مشتری آنها 'شرکتی' می‌باشد
+Response: []
+########################################
+Prompt: تعداد و مجموع مبلغ فاکتورهای ارسالی در سال جاری را با تفکیک ماهانه محاسبه کنید و نتیجه را نمایش دهید.
+Response: []
+########################################
+Prompt: کالاهایی را که خرید آنها با تخفیف بوده و در ماه گذشته ارسال شده‌اند
+Response: []
+########################################
+Prompt: اطلاعات فاکتورهایی که تاریخ ایجاد آنها در سال ۲۰۲۳ بوده و روش پرداخت آنها نقدی/نسیه است
+Response: ```sql
+SELECT 
+    [Id] AS کدسیستم_صورتحساب,
+    [TaxId] AS شناسه_یکتای_صورتحساب,
+    [FactorNumber] AS شماره_سریال_صورتحساب,
+    [CreateDateJalali] AS تاریخ_صورتحساب,
+    [InvoiceType] AS نوع_صورتحساب,
+    [Pattern] AS الگو_صورتحساب,
+    [Subject] AS موضوع_صورتحساب,
+    [CustomerId] AS کلیدخارجی_خریدار,
+    [PaymentMethod] AS روش_پرداخت,
+    [Naghdi] AS نقدی,
+    [Nesiye] AS نسیه,
+    [ContractCode] AS کد_قرارداد,
+    [DeliveryStatus] AS وضعیت_ارسال,
+    [DeliveryResult] AS نتیجه_ارسال,
+    [Description] AS توضیحات_فاکتور,
+    [LastUpdateJalali] AS زمان_تغییر_صورتحساب,
+    [UpdateBy] AS کاربر_تغییر_صورتحساب,
+    [TotalDiscount] AS جمع_تخفیف_صورتحساب,
+    [TotalPrice] AS جمع_مبلغ_صورتحساب,
+    [TotalTax] AS جمع_مالیات_صورتحساب,
+    [NetValue] AS جمع_خالص_صورتحساب,
+    [ShowInList] AS موثر_در_محاسبه,
+    [CustomCode] AS شماره_دستی_صورتحساب,
+    [SendDateJalali] AS زمان_ارسال_به_دارایی
+FROM 
+    [dbo].[Invoices]
+WHERE 
+    [ShowInList] = 1 
+    AND [CreateDateJalali] LIKE '1402%' 
+    AND [PaymentMethod] = 3;
+```
+########################################
+Prompt: تمامی فاکتورهایی که در ماه اخیر ثبت شده‌اند و مشتری آن‌ها حداقل یک فاکتور دیگر در سیستم دارد را نمایش بده
+Response: ```sql
+SELECT inv.Id AS کدسیستم_صورتحساب, 
+       inv.TaxId AS شناسه_یکتای_صورتحساب, 
+       inv.FactorNumber AS شماره_سریال_صورتحساب, 
+       inv.CreateDateJalali AS تاریخ_صورتحساب, 
+       inv.InvoiceType AS نوع_صورتحساب, 
+       inv.Pattern AS الگو_صورتحساب, 
+       inv.Subject AS موضوع_صورتحساب, 
+       inv.CustomerId AS کلیدخارجی_خریدار, 
+       inv.PaymentMethod AS روش_پرداخت, 
+       inv.Naghdi AS نقدی, 
+       inv.Nesiye AS نسیه, 
+       inv.ContractCode AS کد_قرارداد, 
+       inv.DeliveryStatus AS وضعیت_ارسال, 
+       inv.DeliveryResult AS نتیجه_ارسال, 
+       inv.Description AS توضیحات_فاکتور, 
+       inv.LastUpdateJalali AS زمان_تغییر_صورتحساب, 
+       inv.UpdateBy AS کاربر_تغییر_صورتحساب, 
+       inv.TotalDiscount AS جمع_تخفیف_صورتحساب, 
+       inv.TotalPrice AS جمع_مبلغ_صورتحساب, 
+       inv.TotalTax AS جمع_مالیات_صورتحساب, 
+       inv.NetValue AS جمع_خالص_صورتحساب, 
+       inv.ShowInList AS موثر_در_محاسبه, 
+       inv.CustomCode AS شماره_دستی_صورتحساب, 
+       inv.SendDateJalali AS زمان_ارسال_به_دارایی
+FROM Invoices inv
+WHERE inv.ShowInList = 1 
+  AND inv.CreateDateJalali >= FORMAT(DATEADD(MONTH, -1, GETDATE()), 'yyyy/MM/dd')
+  AND inv.CustomerId IN (SELECT CustomerId 
+                          FROM Invoices 
+                          GROUP BY CustomerId 
+                          HAVING COUNT(*) > 1);
+```
+########################################
+Prompt: لیست تمامی کالاهایی که در سیستم به عنوان کالای مورد علاقه کاربر علامت‌گذاری شده‌اند
+Response: []
+########################################
+Prompt: آیا کالایی با کد 1234 تعریف شده است؟
+Response: []
+########################################
+Prompt: جمع فاکتورهای فروش به شرکت الف چقدر بوده است؟
+Response: []
+########################################
+Prompt: تاکنون چقدر مالیات ارزش افزوده دریافت کرده ایم؟
+Response: []
+########################################
+Prompt: 10 تا از صورتحسابهایی که بیشترین مبلغ را داشته اند کدامند؟
+Response: ```sql
+SELECT TOP 10 
+    [Id] AS کدسیستم_صورتحساب,
+    [TaxId] AS شناسه_یکتای_صورتحساب,
+    [FactorNumber] AS شماره_سریال_صورتحساب,
+    [CreateDateJalali] AS تاریخ_صورتحساب,
+    [InvoiceType] AS نوع_صورتحساب,
+    [Pattern] AS الگو_صورتحساب,
+    [Subject] AS موضوع_صورتحساب,
+    [CustomerId] AS کلیدخارجی_خریدار,
+    [PaymentMethod] AS روش_پرداخت,
+    [Naghdi] AS نقدی,
+    [Nesiye] AS نسیه,
+    [ContractCode] AS کد_قرارداد,
+    [DeliveryStatus] AS وضعیت_ارسال,
+    [DeliveryResult] AS نتیجه_ارسال,
+    [Description] AS توضیحات_فاکتور,
+    [LastUpdateJalali] AS زمان_تغییر_صورتحساب,
+    [UpdateBy] AS کاربر_تغییر_صورتحساب,
+    [TotalDiscount] AS جمع_تخفیف_صورتحساب,
+    [TotalPrice] AS جمع_مبلغ_صورتحساب,
+    [TotalTax] AS جمع_مالیات_صورتحساب,
+    [NetValue] AS جمع_خالص_صورتحساب,
+    [ShowInList] AS موثر_در_محاسبه,
+    [CustomCode] AS شماره_دستی_صورتحساب,
+    [SendDateJalali] AS زمان_ارسال_به_دارایی
+FROM [dbo].[Invoices]
+WHERE [ShowInList] = 1
+ORDER BY [TotalPrice] DESC;
+```
+########################################
+Prompt: در مهرماه 1402 جمعا چقدر فروش داشته ایم؟
+Response: []
+########################################
+Prompt: از کاالی تست در تابستان 1403 چقدر فروخته ایم؟
+Response: []
+########################################
+Prompt: من لیستی از کاالهایی که کمترین فروش را در سال 1401 داشته اند میخواهم.
+Response: []
+########################################

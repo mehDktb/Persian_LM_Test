@@ -1,0 +1,159 @@
+Prompt: محصولاتی که قیمت انها بیشتر از پنجاه هزار تومان است و در ماه ابان ۱۴۰۰ به شرکت الف فروخته ایم.
+Response: SELECT g.Id AS کدسیستم_کالا, g.Description AS شرح_دارایی_کالا, g.UserDescription AS عنوان_کالا, ii.Quantity AS تعداد_هرردیف_صورتحساب, ii.UnitPrice AS قیمت_واحد_هرردیف_صورتحساب FROM Goods g JOIN InvoiceItems ii ON g.Id = ii.GoodId JOIN Invoices i ON ii.InvoceId = i.Id WHERE ii.UnitPrice > 50000 AND i.CreateDateJalali LIKE '1400/08%' AND i.CustomerId = (SELECT Id FROM Customers WHERE Name = 'شرکت الف')
+########################################
+Prompt: چه شرکت هایی بیشترین خرید ها را از ما داشته اند
+Response: SELECT c.Name AS CompanyName, SUM(ii.Quantity) AS TotalPurchases FROM Customers c JOIN Invoices i ON c.Id = i.CustomerId JOIN InvoiceItems ii ON i.Id = ii.InvoceId GROUP BY c.Name ORDER BY TotalPurchases DESC
+########################################
+Prompt: پر فروش ترین محصول ما در تابستان ۱۴۰۰ چه محصولی بوده و چقدر فروخته ایم
+Response: SELECT g.UserDescription AS ProductName, SUM(ii.Quantity) AS TotalQuantity FROM InvoiceItems ii JOIN Invoices i ON ii.InvoceId = i.Id JOIN Goods g ON ii.GoodId = g.Id WHERE i.CreateDateJalali LIKE '1400/06%' GROUP BY g.UserDescription ORDER BY TotalQuantity DESC LIMIT 1
+########################################
+Prompt: چه شرکت هایی هنوز به طور کامل با ما تسویه نکرده اند
+Response: SELECT c.Name AS نام_خریدار FROM Customers c WHERE c.Id NOT IN (SELECT i.CustomerId FROM Invoices i WHERE i.NetValue IS NOT NULL);
+########################################
+Prompt: در سال ۱۴۰۰ مجموعا چقدر مالیات پرداخت کرده ایم
+Response: SELECT SUM(II.TaxRate) AS TotalTax FROM Invoices I JOIN InvoiceItems II ON I.Id = II.InvoceId WHERE I.CreateDateJalali LIKE '1400%'
+########################################
+Prompt: اخرین فاکتور شرکت الف کدام است
+Response: SELECT TOP 1 Id AS LastInvoiceId FROM Invoices WHERE CustomerId = (SELECT Id FROM Customers WHERE Name = 'شرکت الف') ORDER BY CreateDateJalali DESC
+########################################
+Prompt: محبوب ترین محصولات کدام اند
+Response: SELECT g.UserDescription AS محبوب_ترین_محصولات FROM Goods g JOIN InvoiceItems ii ON g.Id = ii.GoodId GROUP BY g.UserDescription ORDER BY SUM(ii.Quantity) DESC
+########################################
+Prompt: جزئیات اخرین خرید شرکت الف را نمایش بده
+Response: SELECT TOP 1 * FROM Invoices WHERE CustomerId = (SELECT Id FROM Customers WHERE Name = 'شرکت الف') ORDER BY CreateDateJalali DESC
+########################################
+Prompt: ایا شرکتی به اسم  خزر از ما خرید کرده است ؟
+Response: SELECT COUNT(*) AS PurchaseCount FROM Invoices WHERE CustomerId IN (SELECT Id FROM Customers WHERE Name = N'خزر')
+########################################
+Prompt: تا به حال چه شرکت هایی از ما خرید کرده اند
+Response: SELECT DISTINCT c.Name AS نام_خریدار FROM Invoices i JOIN Customers c ON i.CustomerId = c.Id
+########################################
+Prompt: در یک ماه گذشته چه شرکت هایی از ما خرید کرده اند
+Response: SELECT DISTINCT c.Name AS نام_خریدار FROM Invoices i JOIN Customers c ON i.CustomerId = c.Id WHERE i.CreateDateJalali >= DATEADD(month, -1, GETDATE())
+########################################
+Prompt: در یک سال گذشته چند فاکتور صادر شده
+Response: SELECT COUNT(*) AS InvoiceCount FROM Invoices WHERE CreateDateJalali >= DATEADD(year, -1, GETDATE())
+########################################
+Prompt: مجموع فروش و مالیات شرکت تا الان چقدر بوده
+Response: SELECT SUM(NetValue) AS TotalSales, SUM(TotalTax) AS TotalTax FROM Invoices WHERE ShowInList = 1;
+########################################
+Prompt: اطلاعات تمام مشتریانی که در اسمشان تحقیق است را نمایش بده
+Response: SELECT * FROM Customers WHERE Name LIKE N'%تحقیق%'
+########################################
+Prompt: شماره موبایل و شماره ثابت ده مشتری برتر را نمایش بده
+Response: SELECT TOP 10 c.Mobile AS MobileNumber, c.Phone AS LandlineNumber FROM Customers c ORDER BY c.Id
+########################################
+Prompt: این ماه از محصول الف چقدر بیشتر از ماه قبل فروخته ایم
+Response: SELECT SUM(ii.Quantity) AS CurrentMonthSales FROM InvoiceItems ii JOIN Invoices i ON ii.InvoceId = i.Id JOIN Goods g ON ii.GoodId = g.Id WHERE g.UserDescription = 'محصول الف' AND i.CreateDateJalali LIKE '1402/07%' UNION SELECT SUM(ii.Quantity) AS PreviousMonthSales FROM InvoiceItems ii JOIN Invoices i ON ii.InvoceId = i.Id JOIN Goods g ON ii.GoodId = g.Id WHERE g.UserDescription = 'محصول الف' AND i.CreateDateJalali LIKE '1402/06%'
+########################################
+Prompt: مجموع مبلغ و تعداد فروش هر محصول را به تفکیک محصول نمایش دهید
+Response: SELECT g.UserDescription AS Product, SUM(ii.Quantity) AS TotalQuantity, SUM(ii.UnitPrice * ii.Quantity) AS TotalSales FROM Goods g JOIN InvoiceItems ii ON g.Id = ii.GoodId GROUP BY g.UserDescription
+########################################
+Prompt: محصولاتی که موجودی انها کمتر از ده است
+Response: SELECT g.Id AS کدسیستم_کالا, g.Description AS شرح_دارایی_کالا, g.UserDescription AS عنوان_کالا, g.TaxRate AS نرخ_مالیات FROM Goods g WHERE g.Id NOT IN (SELECT gi.GoodId FROM InvoiceItems gi GROUP BY gi.GoodId HAVING SUM(gi.Quantity) >= 10)
+########################################
+Prompt: جزئیات فاکتور هایی که شامل محصولی با نام لپتاپ است
+Response: SELECT ii.* FROM InvoiceItems ii JOIN Invoices i ON ii.InvoceId = i.Id JOIN Goods g ON ii.GoodId = g.Id WHERE g.Description LIKE '%لپتاپ%' AND i.ShowInList = 1;
+########################################
+Prompt: محصولاتی که قیمت انها بیشتر از ۱۰۰۰۰۰۰ تومان است را نمایش بده
+Response: SELECT * FROM Goods WHERE UserCode > 1000000;
+########################################
+Prompt: فاکتور هایی که در تاریخ فلان صادر شده اند
+Response: SELECT * FROM Invoices WHERE CreateDateJalali = 'فلان' AND ShowInList = 1;
+########################################
+Prompt: تمام محصولاتی که شرکت فلان خریده
+Response: SELECT g.* FROM Goods g JOIN InvoiceItems ii ON g.Id = ii.GoodId JOIN Invoices i ON ii.InvoceId = i.Id JOIN Customers c ON i.CustomerId = c.Id WHERE c.Name = 'شرکت فلان'
+########################################
+Prompt: تمام فاکتور هایی که قیمت انها بیشتر از فلان تومان است
+Response: SELECT * FROM Invoices WHERE TotalPrice > [specified amount] AND ShowInList = 1;
+########################################
+Prompt: تمام فاکتور هایی که در انها محصولی با قیمت بیشتر از فلان است
+Response: SELECT * FROM Invoices WHERE Id IN (SELECT InvoceId FROM InvoiceItems WHERE UnitPrice > [specified price])
+########################################
+Prompt: تمام فاکتور هایی که در انها بیشتر از ده کالا فروخته شده است
+Response: SELECT * FROM Invoices WHERE Id IN (SELECT InvoceId FROM InvoiceItems GROUP BY InvoceId HAVING COUNT(GoodId) > 10) AND ShowInList = 1;
+########################################
+Prompt: محصولاتی که مجموع فروش انها بیشتر از فلان عدد بوده است
+Response: SELECT g.Id AS کدسیستم_کالا, g.Description AS شرح_دارایی_کالا, SUM(ii.Quantity) AS مجموع_فروش FROM Goods g JOIN InvoiceItems ii ON g.Id = ii.GoodId JOIN Invoices i ON ii.InvoceId = i.Id WHERE i.ShowInList = 1 GROUP BY g.Id, g.Description HAVING SUM(ii.Quantity) > [فلان عدد]
+########################################
+Prompt: تمام محصولات به همراه تعداد فروش و مجموع مبلغ فروش آنها را نمایش دهید. این اطلاعات باید به تفکیک هر محصول و بر اساس تاریخ فاکتور مرتب شده باشد.
+Response: SELECT g.Id AS ProductId, g.Description AS ProductDescription, SUM(ii.Quantity) AS TotalQuantity, SUM(ii.UnitPrice * ii.Quantity) AS TotalSales FROM Goods g JOIN InvoiceItems ii ON g.Id = ii.GoodId JOIN Invoices i ON ii.InvoceId = i.Id GROUP BY g.Id, g.Description ORDER BY i.CreateDateJalali
+########################################
+Prompt: مشتریانی که حد اقل ده خرید در سال گذشته داشتند
+Response: SELECT c.Name AS نام_خریدار, COUNT(i.Id) AS تعداد_خرید FROM Customers c JOIN Invoices i ON c.Id = i.CustomerId WHERE YEAR(i.CreateDateJalali) = YEAR(GETDATE()) - 1 GROUP BY c.Name HAVING COUNT(i.Id) >= 10
+########################################
+Prompt: محصولاتی که تا به حال توسط هیچ مشتری ای خریداری نشده اند
+Response: SELECT g.Id AS کدسیستم_کالا, g.Description AS شرح_دارایی_کالا FROM Goods g WHERE NOT EXISTS (SELECT 1 FROM InvoiceItems ii WHERE ii.GoodId = g.Id);
+########################################
+Prompt: لیست تمام محصولات به همراه مقدار موجودی و تعداد فروخته شده از هر کدام
+Response: SELECT g.Id AS کدسیستم_کالا, g.Description AS شرح_دارایی_کالا, g.UserDescription AS عنوان_کالا, g.TaxRate AS نرخ_مالیات, SUM(ii.Quantity) AS تعداد_فروخته_شده FROM Goods g LEFT JOIN InvoiceItems ii ON g.Id = ii.GoodId GROUP BY g.Id, g.Description, g.UserDescription, g.TaxRate
+########################################
+Prompt: مشتریانی که در ماه گذشته سه فاکتور یا بیشتر خرید داشته اند
+Response: SELECT c.Name AS نام_خریدار, COUNT(i.Id) AS تعداد_فاکتورها FROM Customers c JOIN Invoices i ON c.Id = i.CustomerId WHERE i.CreateDateJalali >= DATEADD(month, -1, GETDATE()) GROUP BY c.Name HAVING COUNT(i.Id) >= 3
+########################################
+Prompt: هر مشتری کدام محصول را بیشتر خریده است
+Response: SELECT c.Name AS CustomerName, g.Description AS ProductDescription, SUM(ii.Quantity) AS TotalQuantity FROM Customers c JOIN Invoices i ON c.Id = i.CustomerId JOIN InvoiceItems ii ON i.Id = ii.InvoceId JOIN Goods g ON ii.GoodId = g.Id GROUP BY c.Name, g.Description ORDER BY TotalQuantity DESC
+########################################
+Prompt: لیست تمام سفارشاتی که در بازه یک ماه گذشته ثبت شده اند
+Response: SELECT * FROM Invoices WHERE CreateDateJalali >= DATEADD(month, -1, GETDATE()) AND ShowInList = 1;
+########################################
+Prompt: درامد خالص در ماه گذشته چقدر بوده است
+Response: SELECT SUM(NetValue) AS LastMonthNetIncome FROM Invoices WHERE CreateDateJalali LIKE '1402/07%' AND ShowInList = 1
+########################################
+Prompt: کالاهایی که نرخ مالیات آن‌ها بیشتر از ۹ درصد و میزان تخفیفشان از ۵۰ درصد بیشتر است.
+Response: SELECT g.Id AS کدسیستم_کالا, g.Description AS شرح_دارایی_کالا, g.TaxRate AS نرخ_مالیات, g.Discount AS تخفیف FROM Goods g WHERE g.TaxRate > 0.09 AND g.Discount > 50;
+########################################
+Prompt: لیستی از کالاهایی که بیشترین میزان فروش در سال گذشته را داشته‌اند
+Response: SELECT g.Id AS کدسیستم_کالا, g.Description AS شرح_دارایی_کالا, SUM(ii.Quantity) AS مجموع_فروش FROM Goods g JOIN InvoiceItems ii ON g.Id = ii.GoodId JOIN Invoices i ON ii.InvoceId = i.Id WHERE YEAR(i.CreateDateJalali) = YEAR(GETDATE()) - 1 GROUP BY g.Id, g.Description ORDER BY مجموع_فروش DESC
+########################################
+Prompt: گزارشی از مجموع درآمد و مالیات پرداخت شده برای تمامی صورتحساب‌های قراردادی ایجاد شده در الگوی اول طی سه ماه گذشته که وضعیت تحویل کالا را تایید کرده‌اند تهیه کنید.
+Response: SELECT SUM(NetValue) AS TotalIncome, SUM(TotalTax) AS TotalTaxPaid FROM Invoices WHERE Pattern = 1 AND InvoiceType = 1 AND DeliveryStatus = 3 AND CreateDateJalali >= DATEADD(MONTH, -3, GETDATE())
+########################################
+Prompt: لیست همه مشتریانی که محصول به آن ها ارسال شده و کد ملی آن ها با 123 شروع می‌شود را بگیر.
+Response: SELECT c.Name AS نام_خریدار, c.CustomerType AS نوع_خریدار, c.NationalId AS شناسه_ملی_خریدار, c.PostalCode AS کد_پستی_خریدار, c.BranchNumber AS کد_شعبه_خریدار, c.EconomicCode AS کد_اقتصادی_خریدار, c.IsActive AS فعال_غیرفعال, c.Phone AS تلفن_ثابت_خریدار, c.Mobile AS موبایل_خریدار, c.Address AS آدرس_خریدار, c.Description AS توضیحات_خریدار, c.LastUpdateJalali AS زمان_تغییر_خریدار, c.UpdateBy AS کاربر_تغییر_خریدار FROM Customers c JOIN Invoices i ON c.Id = i.CustomerId WHERE c.NationalId LIKE '123%'
+########################################
+Prompt: کالاهایی که بیشترین نرخ مالیات را دارند.
+Response: SELECT TOP 1 g.Id AS کدسیستم_کالا, g.TaxRate AS نرخ_مالیات, g.Description AS شرح_دارایی_کالا FROM Goods g ORDER BY g.TaxRate DESC
+########################################
+Prompt: صورتحساب‌های دریافتی که روش پرداخت آن‌ها نقدی یا نسیه/نقدی است و نوع الگوی آن‌ها صادرات است را ارائه کنید.
+Response: SELECT * FROM Invoices WHERE (PaymentMethod = 1 OR PaymentMethod = 3) AND Pattern = 7 AND ShowInList = 1;
+########################################
+Prompt: لیستی از مشتریانی را که در سه ماه اخیر خرید داشته‌اند و نوع مشتری آنها 'شرکتی' می‌باشد
+Response: SELECT c.Name AS نام_خریدار, c.CustomerType AS نوع_خریدار, c.NationalId AS شناسه_ملی_خریدار, c.PostalCode AS کد_پستی_خریدار, c.BranchNumber AS کد_شعبه_خریدار, c.EconomicCode AS کد_اقتصادی_خریدار, c.IsActive AS فعال_غیرفعال, c.Phone AS تلفن_ثابت_خریدار, c.Mobile AS موبایل_خریدار, c.Address AS آدرس_خریدار, c.Description AS توضیحات_خریدار, c.LastUpdateJalali AS زمان_تغییر_خریدار, c.UpdateBy AS کاربر_تغییر_خریدار FROM Customers c JOIN Invoices i ON c.Id = i.CustomerId WHERE c.CustomerType = 1 AND i.CreateDateJalali >= DATEADD(MONTH, -3, GETDATE())
+########################################
+Prompt: تعداد و مجموع مبلغ فاکتورهای ارسالی در سال جاری را با تفکیک ماهانه محاسبه کنید و نتیجه را نمایش دهید.
+Response: SELECT MONTH(CreateDateJalali) AS Month, COUNT(*) AS InvoiceCount, SUM(TotalPrice) AS TotalAmount FROM Invoices WHERE YEAR(CreateDateJalali) = YEAR(GETDATE()) GROUP BY MONTH(CreateDateJalali)
+########################################
+Prompt: کالاهایی را که خرید آنها با تخفیف بوده و در ماه گذشته ارسال شده‌اند
+Response: SELECT g.Id AS کدسیستم_کالا, g.Description AS شرح_دارایی_کالا, ii.Quantity AS تعداد_هرردیف_صورتحساب, ii.Discount AS تخفیف_هرردیف_صورتحساب FROM Goods g JOIN InvoiceItems ii ON g.Id = ii.GoodId JOIN Invoices i ON ii.InvoceId = i.Id WHERE ii.Discount > 0 AND i.SendDateJalali >= DATEADD(month, -1, GETDATE())
+########################################
+Prompt: اطلاعات فاکتورهایی که تاریخ ایجاد آنها در سال ۲۰۲۳ بوده و روش پرداخت آنها نقدی/نسیه است
+Response: SELECT * FROM Invoices WHERE CreateDateJalali LIKE '1402%' AND PaymentMethod = 3;
+########################################
+Prompt: تمامی فاکتورهایی که در ماه اخیر ثبت شده‌اند و مشتری آن‌ها حداقل یک فاکتور دیگر در سیستم دارد را نمایش بده
+Response: SELECT DISTINCT i.* FROM Invoices i WHERE MONTH(i.CreateDateJalali) = MONTH(GETDATE()) AND YEAR(i.CreateDateJalali) = YEAR(GETDATE()) AND i.CustomerId IN (SELECT CustomerId FROM Invoices GROUP BY CustomerId HAVING COUNT(*) > 1);
+########################################
+Prompt: لیست تمامی کالاهایی که در سیستم به عنوان کالای مورد علاقه کاربر علامت‌گذاری شده‌اند
+Response: SELECT g.Id AS کدسیستم_کالا, g.Description AS شرح_دارایی_کالا, g.UserDescription AS عنوان_کالا FROM Goods g JOIN InvoiceItems ii ON g.Id = ii.GoodId JOIN Invoices i ON ii.InvoceId = i.Id WHERE i.ShowInList = 1
+########################################
+Prompt: آیا کالایی با کد 1234 تعریف شده است؟
+Response: SELECT COUNT(*) AS ItemCount FROM Goods WHERE UserCode = '1234'
+########################################
+Prompt: جمع فاکتورهای فروش به شرکت الف چقدر بوده است؟
+Response: SELECT SUM(NetValue) AS TotalSales FROM Invoices WHERE CustomerId = (SELECT Id FROM Customers WHERE Name = 'شرکت الف') AND ShowInList = 1;
+########################################
+Prompt: تاکنون چقدر مالیات ارزش افزوده دریافت کرده ایم؟
+Response: SELECT SUM(TotalTax) AS TotalVATReceived FROM Invoices WHERE ShowInList = 1;
+########################################
+Prompt: 10 تا از صورتحسابهایی که بیشترین مبلغ را داشته اند کدامند؟
+Response: SELECT TOP 10 Id AS کدسیستم_صورتحساب, TaxId AS شناسه_یکتای_صورتحساب, FactorNumber AS شماره_سریال_صورتحساب, CreateDateJalali AS تاریخ_صورتحساب, InvoiceType AS نوع_صورتحساب, Pattern AS الگو_صورتحساب, Subject AS موضوع_صورتحساب, CustomerId AS کلیدخارجی_خریدار, PaymentMethod AS روش_پرداخت, Naghdi AS نقدی, Nesiye AS نسیه, ContractCode AS کد_قرارداد, DeliveryStatus AS وضعیت_ارسال, DeliveryResult AS نتیجه_ارسال, Description AS توضیحات_فاکتور, LastUpdateJalali AS زمان_تغییر_صورتحساب, UpdateBy AS کاربر_تغییر_صورتحساب, TotalDiscount AS جمع_تخفیف_صورتحساب, TotalPrice AS جمع_مبلغ_صورتحساب, TotalTax AS جمع_مالیات_صورتحساب, NetValue AS جمع_خالص_صورتحساب, ShowInList AS موثر_در_محاسبه, CustomCode AS شماره_دستی_صورتحساب, SendDateJalali AS زمان_ارسال_به_دارایی FROM Invoices WHERE ShowInList = 1 ORDER BY TotalPrice DESC
+########################################
+Prompt: در مهرماه 1402 جمعا چقدر فروش داشته ایم؟
+Response: SELECT SUM(NetValue) AS TotalSales FROM Invoices WHERE CreateDateJalali LIKE '1402/07%' AND ShowInList = 1;
+########################################
+Prompt: از کاالی تست در تابستان 1403 چقدر فروخته ایم؟
+Response: SELECT SUM(ii.Quantity) AS TotalQuantity FROM InvoiceItems ii JOIN Invoices i ON ii.InvoceId = i.Id JOIN Goods g ON ii.GoodId = g.Id WHERE g.UserDescription = 'کالای تست' AND i.CreateDateJalali LIKE '1403/06%'
+########################################
+Prompt: من لیستی از کاالهایی که کمترین فروش را در سال 1401 داشته اند میخواهم.
+Response: SELECT g.Id AS کدسیستم_کالا, g.Description AS شرح_دارایی_کالا, SUM(ii.Quantity) AS مجموع_فروش FROM Goods g JOIN InvoiceItems ii ON g.Id = ii.GoodId JOIN Invoices i ON ii.InvoceId = i.Id WHERE i.CreateDateJalali LIKE '1401%' GROUP BY g.Id, g.Description ORDER BY مجموع_فروش ASC
+########################################
