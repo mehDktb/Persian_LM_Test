@@ -326,7 +326,7 @@ def qwen_sql_from_nl(user_text: str, schema: str = SQL_SCHEMA) -> str:
     # 4) Generate
     generated_ids = model.generate(
         **inputs,
-        max_new_tokens=256,
+        max_new_tokens=1024,
         do_sample=False,
         top_p=1.0,
         temperature=0.0,
