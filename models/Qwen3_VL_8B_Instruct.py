@@ -272,12 +272,21 @@ Your task:
 - Do NOT invent new tables or columns.
 - Do NOT explain the query.
 - Do NOT return anything except the SQL code itself.
-- Use alias name for all fields.
-- The alias names are denoted in the structure of each table infront of each field after {delimiter_1}.
-- When you want to select a field you should use alias names. If selecting a function, generate a related Persian alias.
-- It's vital that you translate all English fields and assign a Persian alias to each field you want to select.
-- You must use only the real column names from the schema in every part of the SQL query. Persian aliases are never allowed inside SELECT expressions, JOIN conditions, WHERE, GROUP BY, ORDER BY, HAVING, or any SQL expression.
-- Persian aliases may be used only after AS in the SELECT list. If a Persian translation appears anywhere else in the query as a column reference, the SQL query is INVALID and must not be generated.
+
+Naming rules:
+- Every column in the schema has:
+  - a REAL column name (the actual SQL identifier in the database),
+  - and a Persian label shown after {delimiter_1}. The Persian label is NOT a real column name.
+- When writing SQL expressions, you MUST use only the REAL column names from the schema.
+- You MUST assign a Persian alias (translation) to every selected field using AS in the SELECT list.
+
+STRICT CONSTRAINTS (DO NOT VIOLATE):
+- You must use only the real column names from the schema in every part of the SQL query.
+- Persian text (Persian translations / labels / aliases) is NEVER allowed inside:
+  SELECT expressions (before AS), JOIN conditions, WHERE, GROUP BY, ORDER BY, HAVING, or any SQL expression.
+- Persian aliases may be used ONLY after AS in the SELECT list.
+- If a Persian translation appears anywhere else in the query as a column reference (e.g. c.نام_خریدار, i.نقدی, etc.), the SQL query is INVALID and must NOT be generated.
+
 Database schema:
 {SQL_SCHEMA}
 """
