@@ -276,6 +276,8 @@ Your task:
 - The alias names are denoted in the structure of each table infront of each field after {delimiter_1}.
 - When you want to select a field you should use alias names. If selecting a function, generate a related Persian alias.
 - It's vital that you translate all English fields and assign a Persian alias to each field you want to select.
+- You must use only the real column names from the schema in every part of the SQL query. Persian aliases are never allowed inside SELECT expressions, JOIN conditions, WHERE, GROUP BY, ORDER BY, HAVING, or any SQL expression.
+- Persian aliases may be used only after AS in the SELECT list. If a Persian translation appears anywhere else in the query as a column reference, the SQL query is INVALID and must not be generated.
 Database schema:
 {SQL_SCHEMA}
 """
