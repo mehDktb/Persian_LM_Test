@@ -5,12 +5,12 @@ delimiter_1="****"
 SQL_SCHEMA = f"""
 CREATE TABLE [dbo].[Customers](
             [Name] [nvarchar](150) NOT NULL, --{delimiter_1} نام_خریدار
-            [CustomerType] [tinyint] NOT NULL, --{delimiter_1} نوع_خریدار
+            [CustomerType] [tinyint] NOT NULL, --{delimiter_1} نوع_خریدار|ENUM:1=حقیقی,2=حقوقی
             [NationalId] [nvarchar](50) NOT NULL, --{delimiter_1} شناسه_ملی_خریدار
             [PostalCode] [nvarchar](50) NOT NULL, --{delimiter_1} کد_پستی_خریدار
             [BranchNumber] [nvarchar](50) NOT NULL, --{delimiter_1} کد_شعبه_خریدار
             [EconomicCode] [nvarchar](50) NOT NULL, --{delimiter_1} کد_اقتصادی_خریدار
-            [IsActive] [tinyint] NOT NULL, --{delimiter_1} فعال_غیرفعال
+            [IsActive] [tinyint] NOT NULL, --{delimiter_1} فعال_غیرفعال|ENUM:0=غیرفعال,1=فعال
             [Phone] [nvarchar](250) NOT NULL, --{delimiter_1} تلفن_ثابت_خریدار
             [Mobile] [nvarchar](250) NOT NULL, --{delimiter_1} موبایل_خریدار
             [Address] [nvarchar](250) NOT NULL, --{delimiter_1} آدرس_خریدار
@@ -58,15 +58,15 @@ CREATE TABLE [dbo].[Customers](
             [TaxId] [nvarchar](50) NOT NULL, --{delimiter_1} شناسه_یکتای_صورتحساب
             [FactorNumber] [bigint] NOT NULL, --{delimiter_1} شماره_سریال_صورتحساب
             [CreateDateJalali] [nvarchar](20) NULL, --{delimiter_1} زمان_ارسال_به_دارایی
-            [InvoiceType] [tinyint] NOT NULL, --{delimiter_1} نوع_صورتحساب
+            [InvoiceType] [tinyint] NOT NULL, --{delimiter_1} نوع_صورتحساب|ENUM:1=نوع_اول,2=نوع_دوم,3=نوع_سوم
             [Pattern] [tinyint] NOT NULL, --{delimiter_1} الگو_صورتحساب
-            [Subject] [tinyint] NOT NULL,--{delimiter_1} موضوع_صورتحساب
+            [Subject] [tinyint] NOT NULL,--{delimiter_1} موضوع_صورتحساب|ENUM:1=اصلی,2=اصلاحی,3=ابطالی,4=برگشت_از_فروش
             [CustomerId] [bigint] NULL, --{delimiter_1} کلیدخارجی_خریدار
-            [PaymentMethod] [tinyint] NOT NULL, --{delimiter_1} روش_پرداخت
+            [PaymentMethod] [tinyint] NOT NULL, --{delimiter_1} روش_پرداخت|ENUM:1=نقدی,2=نسیه,3=نقدی_نسیه
             [Naghdi] [bigint] NOT NULL, --{delimiter_1} نقدی
             [Nesiye] [bigint] NOT NULL, --{delimiter_1} نسیه
             [ContractCode] [nvarchar](50) NOT NULL, --{delimiter_1} کد_قرارداد
-            [DeliveryStatus] [tinyint] NOT NULL, --{delimiter_1} وضعیت_ارسال
+            [DeliveryStatus] [tinyint] NOT NULL, --{delimiter_1} وضعیت_ارسال|ENUM:0=ارسال_نشده,1=صف_ارسال,2=منتظر_استعلام,3=تایید_شده,4=رد_شده
             [DeliveryResult] [nvarchar](4000) NULL, --{delimiter_1} نتیجه_ارسال
             [Description] [nvarchar](500) NULL, --{delimiter_1} توضیحات_فاکتور
             [LastUpdateJalali] [nvarchar](20) NOT NULL, --{delimiter_1} زمان_تغییر_صورتحساب
@@ -75,7 +75,7 @@ CREATE TABLE [dbo].[Customers](
             [TotalPrice] [bigint] NULL, --{delimiter_1} جمع_مبلغ_صورتحساب
             [TotalTax] [bigint] NULL, --{delimiter_1} جمع_مالیات_صورتحساب
             [NetValue] [bigint] NULL, --{delimiter_1} جمع_خالص_صورتحساب
-            [ShowInList] [tinyint] NOT NULL, --{delimiter_1} موثر_در_محاسبه
+            [ShowInList] [tinyint] NOT NULL, --{delimiter_1} موثر_در_محاسبه|ENUM:0=حذف_شده,1=فعال
             [CustomCode] [nvarchar](50) NOT NULL, --{delimiter_1} شماره_دستی_صورتحساب
             [SendDateJalali] [nvarchar](20) NOT NULL, --{delimiter_1}  تاریخ_صورتحساب 
         CONSTRAINT [PK_Invoices] PRIMARY KEY CLUSTERED
@@ -111,9 +111,9 @@ CREATE TABLE [dbo].[Customers](
             [Id] [bigint] IDENTITY(1,1) NOT NULL,
             [Title] [nvarchar](150) NOT NULL, --{delimiter_1} عنوان_حساب
             [Code] [int] NOT NULL, --{delimiter_1} کد_حساب
-            [IsActive] [tinyint] NOT NULL, --{delimiter_1} وضعیت_حساب
-            [Kind] [int] NOT NULL, --{delimiter_1} نوع_حساب
-            [Nature] [int] NOT NULL, --{delimiter_1} ماهیت_حساب
+            [IsActive] [tinyint] NOT NULL, --{delimiter_1} وضعیت_حساب|ENUM:0=غیرفعال,1=فعال
+            [Kind] [int] NOT NULL, --{delimiter_1} نوع_حساب|ENUM:1=دائم,2=موقت,3=انتظامی
+            [Nature] [int] NOT NULL, --{delimiter_1} ماهیت_حساب|ENUM:1=هردو,2=بدهکار,3=بستانکار
         CONSTRAINT [PK_AccountGroups] PRIMARY KEY CLUSTERED
         (
             [Id] ASC
@@ -127,14 +127,14 @@ CREATE TABLE [dbo].[Customers](
             [CreationDateJalali] [nvarchar](50) NULL, --{delimiter_1} تاریخ_سند
             [Description] [nvarchar](250) NULL, --{delimiter_1} شرح_کلی_سند
             [TotalDebt] [decimal](18, 0) NULL, --{delimiter_1} جمع_بدهکار
-            [Kind] [tinyint] NOT NULL, --{delimiter_1} نوع_سند
-            [Status] [tinyint] NOT NULL, --{delimiter_1} وضعیت_سند
+            [Kind] [tinyint] NOT NULL, --{delimiter_1} نوع_سند|ENUM:1=عادی,2=دریافت_و_پرداخت,3=حقوق_و_دستمزد,4=خرید,5=افتتاحیه,6=اختتامیه,7=سود_و_زیان
+            [Status] [tinyint] NOT NULL, --{delimiter_1} وضعیت_سند|ENUM:1=یادداشت,2=موقت,3=تایید_شده,4=قطعی
             [ApprovedBy] [bigint] NULL, --{delimiter_1} تایید_کننده_سند
             [ApprovalDateJalali] [nvarchar](50) NULL, --{delimiter_1} تاریخ_تایید_سند
             [TotalCredit] [decimal](18, 0) NULL, --{delimiter_1} جمع_بستانکاد
-            [IsApproved] [tinyint] NOT NULL, --{delimiter_1} وضعیت_تایید
+            [IsApproved] [tinyint] NOT NULL, --{delimiter_1} وضعیت_تایید|ENUM:0=تایید_نشده,1=تایید_شده
             [DailyNo] [int] NULL, --{delimiter_1} شماره_روزانه_سند
-            [HasAttach] [bit] NOT NULL, --{delimiter_1} وضعیت_پیوست_سند
+            [HasAttach] [bit] NOT NULL, --{delimiter_1} وضعیت_پیوست_سند|ENUM:0=خیر,1=بله
         CONSTRAINT [PK_AccountingDocs] PRIMARY KEY CLUSTERED 
         (
             [Id] ASC
@@ -165,9 +165,9 @@ CREATE TABLE [dbo].[Customers](
             [Code] [int] NOT NULL, --{delimiter_1} کد_حساب_کل
             [GroupId] [bigint] NOT NULL, --{delimiter_1} کلید_خارجی_گروه_حساب
             [Title] [nvarchar](150) NOT NULL, --{delimiter_1} عنوان_حساب_کل
-            [Kind] [int] NOT NULL, --{delimiter_1} نوع_حساب_کل
-            [Nature] [int] NOT NULL, --{delimiter_1} ماهیت_حساب_کل
-            [IsActive] [tinyint] NOT NULL, --{delimiter_1} وضعیت_حساب_کل
+            [Kind] [int] NOT NULL, --{delimiter_1} نوع_حساب_کل|ENUM:1=دائم,2=موقت,3=انتظامی
+            [Nature] [int] NOT NULL, --{delimiter_1} ماهیت_حساب_کل|ENUM:1=هردو,2=بدهکار,3=بستانکار
+            [IsActive] [tinyint] NOT NULL, --{delimiter_1} وضعیت_حساب_کل|ENUM:0=غیرفعال,1=فعال
         CONSTRAINT [PK_Ledgers_1] PRIMARY KEY CLUSTERED 
         (
             [Id] ASC
@@ -180,9 +180,9 @@ CREATE TABLE [dbo].[Customers](
             [Code] [int] NOT NULL, --{delimiter_1} کد_حساب_معین
             [Title] [nvarchar](150) NOT NULL, --{delimiter_1} عنوان_حساب_معین
             [LedgerId] [bigint] NOT NULL, --{delimiter_1} کلید_خازجی_حساب_کل
-            [IsActive] [tinyint] NOT NULL, --{delimiter_1} وضعیت_حساب_معین
-            [Nature] [int] NOT NULL, --{delimiter_1} ماهیت_حساب_معین
-            [Kind] [int] NOT NULL, --{delimiter_1} نوع_حساب_معین
+            [IsActive] [tinyint] NOT NULL, --{delimiter_1} وضعیت_حساب_معین|ENUM:0=غیرفعال,1=فعال
+            [Nature] [int] NOT NULL, --{delimiter_1} ماهیت_حساب_معین|ENUM:1=هردو,2=بدهکار,3=بستانکار
+            [Kind] [int] NOT NULL, --{delimiter_1} نوع_حساب_معین|ENUM:1=دائم,2=موقت,3=انتظامی
             [TafsilId1] [bigint] NULL, --{delimiter_1} کلید_خارجی_نوع_تفصیل_1
             [TafsilId2] [bigint] NULL, --{delimiter_1} کلید_خارجی_نوع_تفصیل_2
             [TafsilId3] [bigint] NULL, --{delimiter_1} کلید_خارجی_نوع_تفصیل_3
@@ -198,7 +198,7 @@ CREATE TABLE [dbo].[Customers](
             [Code] [int] NOT NULL, --{delimiter_1} کد_حساب_تفصیل
             [TafsilTypeId] [bigint] NOT NULL, --{delimiter_1} کلید_خارجی_نوع_تفصیل
             [Title] [nvarchar](150) NOT NULL, --{delimiter_1} عنوان_حساب_تفصیل
-            [IsActive] [tinyint] NOT NULL, --{delimiter_1} وضعیت_حساب_تفصیل
+            [IsActive] [tinyint] NOT NULL, --{delimiter_1} وضعیت_حساب_تفصیل|ENUM:0=غیرفعال,1=فعال
             [Description] [nvarchar](500) NULL, --{delimiter_1} توضیحات_تکمیلی_حساب_تفصیل
             [CustomerId] [bigint] NULL, --{delimiter_1} کلید_خارجی_خریدار
         CONSTRAINT [PK_Tafsils] PRIMARY KEY CLUSTERED 
@@ -212,7 +212,7 @@ CREATE TABLE [dbo].[Customers](
             [Id] [bigint] IDENTITY(1,1) NOT NULL,
             [Code] [int] NOT NULL, --{delimiter_1} کد_نوع_تفصیل
             [Title] [nvarchar](150) NOT NULL, --{delimiter_1} عنوان_نوع_تفصیل
-            [IsSystem] [tinyint] NOT NULL, --{delimiter_1} وضعیت_نوع_تفصیل_سیستمی
+            [IsSystem] [tinyint] NOT NULL, --{delimiter_1} وضعیت_نوع_تفصیل_سیستمی|ENUM:1=سیستمی,2=غیر_سیستمی
         CONSTRAINT [PK_TafsilTypes] PRIMARY KEY CLUSTERED 
         (
             [Id] ASC
@@ -286,6 +286,30 @@ STRICT CONSTRAINTS (DO NOT VIOLATE):
   SELECT expressions (before AS), JOIN conditions, WHERE, GROUP BY, ORDER BY, HAVING, or any SQL expression.
 - Persian aliases may be used ONLY after AS in the SELECT list.
 - If a Persian translation appears anywhere else in the query as a column reference (e.g. c.نام_خریدار, i.نقدی, etc.), the SQL query is INVALID and must NOT be generated.
+
+Enum mapping rules:
+- Some columns in the schema have an ENUM definition in the form:
+  ENUM:value1=PersianText1,value2=PersianText2,...
+- When such a column is selected, you should use a CASE expression to map the numeric values to their Persian equivalents.
+- The CASE expression must use the real column name (not the Persian alias) and must return Persian text only in string literals.
+- The result of the CASE expression must have a Persian alias using AS in the SELECT list.
+
+Examples of correct usage:
+- For a column defined as:
+  [DeliveryStatus] [tinyint] NOT NULL, --{delimiter_1} وضعیت_ارسال|ENUM:0=ارسال_نشده,1=صف_ارسال,2=منتظر_استعلام,3=تایید_شده,4=رد_شده
+
+  You should generate something like:
+
+  SELECT
+      i.DeliveryStatus AS وضعیت_ارسال_کد,
+      CASE i.DeliveryStatus
+          WHEN 0 THEN N'ارسال نشده'
+          WHEN 1 THEN N'صف ارسال'
+          WHEN 2 THEN N'منتظر استعلام'
+          WHEN 3 THEN N'تایید شده'
+          WHEN 4 THEN N'رد شده'
+      END AS وضعیت_ارسال
+  FROM Invoices i;
 
 Database schema:
 {SQL_SCHEMA}
