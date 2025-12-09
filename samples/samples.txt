@@ -1,488 +1,69 @@
-"یک نامه اداری به اقای غلامی بنویس و بگو عصر بیاد جلسه"
-"قاره امریکا در چه تاریخی کشف شد"
-"یک پیشنهاد برای پروژه کارشناسی یک دانشجو مکانیک بده"
-"پولدار ترین مرد جهاد چه کسی است؟"
-"یک کد sql بنویس که لیست تمام مشتریانی که از ما خرید کرده اند را نمایش دهد"
-"یک کد پایتون بنویس که اسم مشتری را از کاربر گرفته و آن را به یک لیست اضافه کند"
 
-
-####################################################################################
 محصولاتی که قیمت انها بیشتر از پنجاه هزار تومان است و در ماه ابان ۱۴۰۰ به شرکت محورسازان شیراز فروخته ایم.
-SELECT
-g.Description AS ProductName,
-g.UserDescription AS ProductUserDescription,
-ii.UnitPrice,
-ii.Quantity,
-ii.TotalPrice,
-ii.TotalTax,
-ii.NetValue,
-c.Name AS CustomerName,
-i.CreateDateJalali AS InvoiceDate
-FROM dbo.InvoiceItems AS ii
-INNER JOIN dbo.Invoices AS i
-ON ii.InvoceId = i.Id
-INNER JOIN dbo.Customers AS c
-ON i.CustomerId = c.Id
-INNER JOIN dbo.Goods AS g
-ON ii.GoodId = g.Id
-WHERE
-ii.UnitPrice > 50000
-AND i.CreateDateJalali LIKE N'۱۴۰۰/۰۸/%'
-AND c.Name = N'شرکت الف';
-####################################################################################
 
-####################################################################################
 چه شرکت هایی بیشترین خرید ها را از ما داشته اند
-SELECT
-c.Name AS CustomerName,
-SUM(i.TotalPrice) AS TotalPurchased
-FROM dbo.Invoices AS i
-INNER JOIN dbo.Customers AS c
-ON i.CustomerId = c.Id
-GROUP BY
-c.Name
-ORDER BY
-TotalPurchased DESC;
-####################################################################################
 
-####################################################################################
 پر فروش ترین محصول ما در تابستان ۱۴۰۰ چه محصولی بوده و چقدر فروخته ایم
-SELECT TOP 1
-    g.Description AS ProductName,
-    SUM(ii.Quantity) AS TotalQuantitySold
-FROM dbo.InvoiceItems AS ii
-INNER JOIN dbo.Invoices AS i
-    ON ii.InvoceId = i.Id
-INNER JOIN dbo.Goods AS g
-    ON ii.GoodId = g.Id
-WHERE
-    i.CreateDateJalali LIKE N'۱۴۰۰/۰۴/%'
-    OR i.CreateDateJalali LIKE N'۱۴۰۰/۰۵/%'
-    OR i.CreateDateJalali LIKE N'۱۴۰۰/۰۶/%'
-GROUP BY
-    g.Description
-ORDER BY
-    TotalQuantitySold DESC;
-####################################################################################
 
-####################################################################################
 چه شرکت هایی هنوز به طور کامل با ما تسویه نکرده اند
-SELECT
-    c.Name AS CustomerName,
-    SUM(i.Nesiye) AS TotalUnpaid
-FROM dbo.Invoices AS i
-INNER JOIN dbo.Customers AS c
-    ON i.CustomerId = c.Id
-GROUP BY
-    c.Name
-HAVING
-    SUM(i.Nesiye) > 0
-ORDER BY
-    TotalUnpaid DESC;
-####################################################################################
 
-####################################################################################
 در سال ۱۴۰۰ مجموعا چقدر مالیات پرداخت کرده ایم
-SELECT
-    SUM(i.TotalTax) AS TotalTaxPaid_1400
-FROM dbo.Invoices AS i
-WHERE i.CreateDateJalali LIKE N'۱۴۰۰/%';
-####################################################################################
 
-####################################################################################
+
 اخرین فاکتور شرکت پگاه گستران شرق کدام است
-SELECT TOP 1
-    i.*
-FROM dbo.Invoices AS i
-INNER JOIN dbo.Customers AS c
-    ON i.CustomerId = c.Id
-WHERE c.Name = N'شرکت الف'
-ORDER BY i.Id DESC;
-####################################################################################
 
-####################################################################################
+
 محبوب ترین محصولات کدام اند
-SELECT
-    g.Description AS ProductName,
-    SUM(ii.Quantity) AS TotalQuantitySold
-FROM dbo.InvoiceItems AS ii
-INNER JOIN dbo.Goods AS g
-    ON ii.GoodId = g.Id
-GROUP BY
-    g.Description
-ORDER BY
-    TotalQuantitySold DESC;
-####################################################################################
 
-####################################################################################
 جزئیات اخرین خرید شرکت آبا صنعت آواژنگ را نمایش بده
-SELECT
-    i.Id AS InvoiceId,
-    i.FactorNumber,
-    i.CreateDateJalali,
-    g.Description AS ProductName,
-    ii.Quantity,
-    ii.UnitPrice,
-    ii.TotalPrice,
-    ii.TotalTax,
-    ii.NetValue
-FROM dbo.Invoices AS i
-INNER JOIN dbo.Customers AS c
-    ON i.CustomerId = c.Id
-INNER JOIN dbo.InvoiceItems AS ii
-    ON ii.InvoceId = i.Id
-INNER JOIN dbo.Goods AS g
-    ON ii.GoodId = g.Id
-WHERE
-    c.Name = N'شرکت الف'
-    AND i.Id = (
-        SELECT TOP 1 Id
-        FROM dbo.Invoices
-        WHERE CustomerId = c.Id
-        ORDER BY Id DESC
-    );
-####################################################################################
 
-####################################################################################
 ایا شرکتی به اسم  خزر از ما خرید کرده است ؟
-SELECT
-    CASE WHEN COUNT(*) > 0 THEN N'YES' ELSE N'NO' END AS HasPurchased
-FROM dbo.Invoices AS i
-INNER JOIN dbo.Customers AS c
-    ON i.CustomerId = c.Id
-WHERE c.Name = N'خزر';
-####################################################################################
 
-####################################################################################
 تا به حال چه شرکت هایی از ما خرید کرده اند
-SELECT DISTINCT
-    c.Name AS CustomerName
-FROM dbo.Invoices AS i
-INNER JOIN dbo.Customers AS c
-    ON i.CustomerId = c.Id;
-####################################################################################
 
-####################################################################################
 در یک ماه گذشته چه شرکت هایی از ما خرید کرده اند
-SELECT DISTINCT
-    c.Name AS CustomerName
-FROM dbo.Invoices AS i
-INNER JOIN dbo.Customers AS c
-    ON i.CustomerId = c.Id
-WHERE i.CreateDateJalali >= CONVERT(nvarchar(20), DATEADD(day, -30, GETDATE()), 112);
-####################################################################################
 
-####################################################################################
 در یک سال گذشته چند فاکتور صادر شده
-SELECT
-    COUNT(*) AS InvoiceCountLastYear
-FROM dbo.Invoices
-WHERE CreateDateJalali >= CONVERT(nvarchar(20), DATEADD(day, -365, GETDATE()), 112);
-####################################################################################
 
-####################################################################################
 مجموع فروش و مالیات شرکت تا الان چقدر بوده
-SELECT
-    SUM(i.TotalPrice) AS TotalSales,
-    SUM(i.TotalTax) AS TotalTax
-FROM dbo.Invoices AS i;
-####################################################################################
 
-####################################################################################
 اطلاعات تمام مشتریانی که در اسمشان تحقیق است را نمایش بده
-SELECT *
-FROM dbo.Customers
-WHERE Name LIKE N'%تحقیق%';
-####################################################################################
 
-####################################################################################
 شماره موبایل و شماره ثابت ده مشتری برتر را نمایش بده
-SELECT TOP 10
-    c.Name,
-    c.Mobile,
-    c.Phone,
-    SUM(i.TotalPrice) AS TotalPurchased
-FROM dbo.Customers AS c
-INNER JOIN dbo.Invoices AS i
-    ON i.CustomerId = c.Id
-GROUP BY
-    c.Name, c.Mobile, c.Phone
-ORDER BY
-    TotalPurchased DESC;
-####################################################################################
 
-####################################################################################
 این ماه از محصول الف چقدر بیشتر از ماه قبل فروخته ایم
-SELECT
-    (
-        SELECT SUM(ii.Quantity)
-        FROM dbo.InvoiceItems AS ii
-        INNER JOIN dbo.Invoices AS i ON ii.InvoceId = i.Id
-        INNER JOIN dbo.Goods AS g ON ii.GoodId = g.Id
-        WHERE g.Description = N'محصول الف'
-          AND SUBSTRING(i.CreateDateJalali, 1, 4) = (
-                SELECT MAX(SUBSTRING(CreateDateJalali, 1, 4))
-                FROM dbo.Invoices
-            )
-          AND SUBSTRING(i.CreateDateJalali, 6, 2) = (
-                SELECT MAX(SUBSTRING(CreateDateJalali, 6, 2))
-                FROM dbo.Invoices
-            )
-    )
-    -
-    (
-        SELECT SUM(ii.Quantity)
-        FROM dbo.InvoiceItems AS ii
-        INNER JOIN dbo.Invoices AS i ON ii.InvoceId = i.Id
-        INNER JOIN dbo.Goods AS g ON ii.GoodId = g.Id
-        WHERE g.Description = N'محصول الف'
-          AND SUBSTRING(i.CreateDateJalali, 1, 4) = (
-                SELECT MAX(SUBSTRING(CreateDateJalali, 1, 4))
-                FROM dbo.Invoices
-            )
-          AND SUBSTRING(i.CreateDateJalali, 6, 2) = (
-                SELECT
-                    RIGHT('00' + CAST(
-                        CAST(MAX(SUBSTRING(CreateDateJalali, 6, 2)) AS int) - 1
-                        AS nvarchar(2)), 2)
-                FROM dbo.Invoices
-            )
-    ) AS QuantityDifference;
-####################################################################################
 
-####################################################################################
 مجموع مبلغ و تعداد فروش هر محصول را به تفکیک محصول نمایش دهید
-SELECT
-    g.Description AS ProductName,
-    SUM(ii.Quantity) AS TotalQuantity,
-    SUM(ii.TotalPrice) AS TotalAmount
-FROM dbo.InvoiceItems AS ii
-INNER JOIN dbo.Goods AS g
-    ON ii.GoodId = g.Id
-GROUP BY
-    g.Description;
-####################################################################################
 
-####################################################################################
 جزئیات فاکتور هایی که شامل محصولی با نام لپتاپ است
-SELECT
-    i.Id AS InvoiceId,
-    i.FactorNumber,
-    i.CreateDateJalali,
-    g.Description AS ProductName,
-    ii.Quantity,
-    ii.UnitPrice,
-    ii.TotalPrice,
-    ii.TotalTax,
-    ii.NetValue
-FROM dbo.InvoiceItems AS ii
-INNER JOIN dbo.Invoices AS i
-    ON ii.InvoceId = i.Id
-INNER JOIN dbo.Goods AS g
-    ON ii.GoodId = g.Id
-WHERE g.Description LIKE N'%لپتاپ%';
-####################################################################################
 
-####################################################################################
 محصولاتی که قیمت انها بیشتر از ۱۰۰۰۰۰۰ تومان است را نمایش بده
-SELECT *
-FROM dbo.Goods
-WHERE Id IN (
-    SELECT GoodId
-    FROM dbo.InvoiceItems
-    WHERE UnitPrice > 1000000
-);
-####################################################################################
 
-####################################################################################
 فاکتور هایی که در تاریخ فلان صادر شده اند
-SELECT *
-FROM dbo.Invoices
-WHERE CreateDateJalali = N'فلان';
-####################################################################################
 
-####################################################################################
 تمام محصولاتی که شرکت فلان خریده
-SELECT
-    g.*
-FROM dbo.InvoiceItems AS ii
-INNER JOIN dbo.Invoices AS i
-    ON ii.InvoceId = i.Id
-INNER JOIN dbo.Customers AS c
-    ON i.CustomerId = c.Id
-INNER JOIN dbo.Goods AS g
-    ON ii.GoodId = g.Id
-WHERE c.Name = N'فلان';
-####################################################################################
 
-####################################################################################
 تمام فاکتور هایی که قیمت انها بیشتر از فلان تومان است
-SELECT *
-FROM dbo.Invoices
-WHERE TotalPrice > فلان;
-####################################################################################
 
-####################################################################################
 تمام فاکتور هایی که در انها محصولی با قیمت بیشتر از فلان است
-SELECT DISTINCT
-    i.*
-FROM dbo.Invoices AS i
-INNER JOIN dbo.InvoiceItems AS ii
-    ON ii.InvoceId = i.Id
-WHERE ii.UnitPrice > فلان;
-####################################################################################
 
-####################################################################################
 تمام فاکتور هایی که در انها بیشتر از ده کالا فروخته شده است
-SELECT
-    i.*
-FROM dbo.Invoices AS i
-INNER JOIN dbo.InvoiceItems AS ii
-    ON ii.InvoceId = i.Id
-GROUP BY
-    i.Id, i.TaxId, i.FactorNumber, i.CreateDateJalali, i.InvoiceType,
-    i.Pattern, i.Subject, i.CustomerId, i.PaymentMethod, i.Naghdi,
-    i.Nesiye, i.ContractCode, i.DeliveryStatus, i.DeliveryResult,
-    i.Description, i.LastUpdateJalali, i.UpdateBy, i.TotalDiscount,
-    i.TotalPrice, i.TotalTax, i.NetValue, i.ShowInList, i.CustomCode,
-    i.SendDateJalali
-HAVING
-    SUM(ii.Quantity) > 10;
-####################################################################################
 
-####################################################################################
 محصولاتی که مجموع فروش انها بیشتر از فلان عدد بوده است
-SELECT
-    g.Description AS ProductName,
-    SUM(ii.Quantity) AS TotalQuantitySold
-FROM dbo.InvoiceItems AS ii
-INNER JOIN dbo.Goods AS g
-    ON ii.GoodId = g.Id
-GROUP BY
-    g.Description
-HAVING
-    SUM(ii.Quantity) > فلان;
-####################################################################################
 
-####################################################################################
 تمام محصولات به همراه تعداد فروش و مجموع مبلغ فروش آنها را نمایش دهید. این اطلاعات باید به تفکیک هر محصول و بر اساس تاریخ فاکتور مرتب شده باشد.
-ChatGPT said:
 
-SELECT
-g.Description AS ProductName,
-i.CreateDateJalali AS InvoiceDate,
-SUM(ii.Quantity) AS TotalQuantitySold,
-SUM(ii.TotalPrice) AS TotalSalesAmount
-FROM dbo.InvoiceItems AS ii
-INNER JOIN dbo.Invoices AS i
-ON ii.InvoceId = i.Id
-INNER JOIN dbo.Goods AS g
-ON ii.GoodId = g.Id
-GROUP BY
-g.Description,
-i.CreateDateJalali
-ORDER BY
-i.CreateDateJalali,
-g.Description;
-####################################################################################
-
-####################################################################################
 مشتریانی که حد اقل ده خرید در سال گذشته داشتند
-SELECT
-    c.Name AS CustomerName,
-    COUNT(i.Id) AS PurchaseCount
-FROM dbo.Customers AS c
-INNER JOIN dbo.Invoices AS i
-    ON i.CustomerId = c.Id
-WHERE i.CreateDateJalali >= CONVERT(nvarchar(20), DATEADD(day, -365, GETDATE()), 112)
-GROUP BY
-    c.Name
-HAVING
-    COUNT(i.Id) >= 10;
-####################################################################################
 
-####################################################################################
 محصولاتی که تا به حال توسط هیچ مشتری ای خریداری نشده اند
-SELECT *
-FROM dbo.Goods AS g
-WHERE g.Id NOT IN (
-    SELECT DISTINCT ii.GoodId
-    FROM dbo.InvoiceItems AS ii
-);
-####################################################################################
 
-####################################################################################
 لیست تمام محصولات به همراه مقدار موجودی و تعداد فروخته شده از هر کدام
-SELECT
-    g.Description AS ProductName,
-    g.Id AS ProductId,
-    0 AS InventoryQuantity,
-    ISNULL(SUM(ii.Quantity), 0) AS TotalSold
-FROM dbo.Goods AS g
-LEFT JOIN dbo.InvoiceItems AS ii
-    ON ii.GoodId = g.Id
-GROUP BY
-####################################################################################
 
-####################################################################################
 مشتریانی که در ماه گذشته سه فاکتور یا بیشتر خرید داشته اند
-SELECT
-    c.Name AS CustomerName,
-    COUNT(i.Id) AS InvoiceCount
-FROM dbo.Customers AS c
-INNER JOIN dbo.Invoices AS i
-    ON i.CustomerId = c.Id
-WHERE i.CreateDateJalali >= CONVERT(nvarchar(20), DATEADD(day, -30, GETDATE()), 112)
-GROUP BY
-    c.Name
-HAVING
-    COUNT(i.Id) >= 3;
-####################################################################################
 
-####################################################################################
 هر مشتری کدام محصول را بیشتر خریده است
-WITH CustomerProductTotals AS (
-    SELECT
-        c.Id AS CustomerId,
-        c.Name AS CustomerName,
-        g.Id AS ProductId,
-        g.Description AS ProductName,
-        SUM(ii.Quantity) AS TotalQuantity
-    FROM dbo.Customers AS c
-    INNER JOIN dbo.Invoices AS i
-        ON i.CustomerId = c.Id
-    INNERJOIN dbo.InvoiceItems AS ii
-        ON ii.InvoceId = i.Id
-    INNER JOIN dbo.Goods AS g
-        ON g.Id = ii.GoodId
-    GROUP BY
-        c.Id, c.Name, g.Id, g.Description
-),
-RankedProducts AS (
-    SELECT
-        *,
-        ROW_NUMBER() OVER (PARTITION BY CustomerId ORDER BY TotalQuantity DESC) AS rn
-    FROM CustomerProductTotals
-)
-SELECT
-    CustomerName,
-    ProductName,
-    TotalQuantity
-FROM RankedProducts
-WHERE rn = 1;
-####################################################################################
 
-####################################################################################
 لیست تمام سفارشاتی که در بازه یک ماه گذشته ثبت شده اند
-SELECT *
-FROM dbo.Invoices
-WHERE CreateDateJalali >= CONVERT(nvarchar(20), DATEADD(day, -30, GETDATE()), 112);
-####################################################################################
 
-####################################################################################
 درامد خالص در ماه گذشته چقدر بوده است
-SELECT
-    SUM(i.NetValue) AS NetIncomeLastMonth
-FROM dbo.Invoices AS i
-WHERE i.CreateDateJalali >= CONVERT(nvarchar(20), DATEADD(day, -30, GETDATE()), 112);
-####################################################################################
+
