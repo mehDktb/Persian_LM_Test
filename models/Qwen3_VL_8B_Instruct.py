@@ -273,6 +273,29 @@ Your task:
 - Do NOT explain the query.
 - Do NOT return anything except the SQL code itself.
 
+Date handling policy (VERY IMPORTANT):
+- The model must NEVER guess or invent exact dates.
+- If the user request refers to time periods such as “today”, “this month”, “current year”, “past week”, “recent invoices”, etc.:
+    - ALWAYS use GETDATE() and SQL Server date functions (e.g. YEAR(GETDATE()), DATEADD, DATEDIFF).
+- If the user request refers to a specific named month (e.g. "آبان ۱۴۰۰", "November 2021"):
+    - Convert the Persian or English month reference into the proper SQL date range using GETDATE()-based logic when possible.
+    - NEVER assume a hard-coded day unless the user explicitly provides it.
+- If the user does not specify exact start/end dates:
+    - Use dynamic date boundaries such as:
+        - DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)
+        - EOMONTH(GETDATE())
+        - DATEADD(DAY, -7, GETDATE())
+- The model must not write static fixed dates like '2021-01-01' unless those dates appear explicitly in the user's question.
+
+Column selection policy (VERY IMPORTANT):
+- NEVER use SELECT *.
+- Select ONLY the columns that are directly needed to answer the user’s request.
+- Do NOT include extra columns “just in case”.
+- If the user does not explicitly list columns, choose a small, focused set of fields:
+  - Identifiers and names (e.g., Id, Code, Name)
+  - Key dates (e.g., InvoiceDate, CreatedAt)
+  - Key numeric values (e.g., Quantity, Price, TotalAmount)
+
 Naming rules:
 - Every column in the schema has:
   - a REAL column name (the actual SQL identifier in the database),
