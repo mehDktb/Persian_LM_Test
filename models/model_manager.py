@@ -54,7 +54,7 @@ def _schedule_auto_unload():
 
 def _load_qwen():
     """Actually load Qwen model + processor into memory."""
-    model_name = "Qwen/Qwen3-VL-8B-Instruct"
+    model_name = "/home/ubuntu/Qwen3-VL-8B-Instruct"
 
     print("[INFO] Loading Qwen model into memory...")
     model = Qwen3VLForConditionalGeneration.from_pretrained(
