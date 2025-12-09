@@ -1,0 +1,676 @@
+--############################
+--محصولاتی که قیمت انها بیشتر از پنجاه هزار تومان است و در ماه ابان ۱۴۰۰ به شرکت محورسازان شیراز فروخته ایم.
+
+SELECT
+    g.Id AS کد_کالا,
+    g.UserDescription AS عنوان_کالا,
+    g.Description AS شرح_دارایی_کالا,
+    g.TaxSystemCode AS کد_دارایی_کالا,
+    i.InvoiceType AS نوع_صورتحساب,
+    i.SendDateJalali AS تاریخ_صورتحساب,
+    ii.UnitPrice AS قیمت_واحد_هرردیف_صورتحساب,
+    ii.Quantity AS تعداد_هرردیف_صورتحساب,
+    ii.TotalPrice AS جمع_مبلغ_هرردیف_صورتحساب,
+    ii.TotalTax AS مالیات_هرردیف_صورتحساب,
+    ii.NetValue AS مبلغ_خالص_هرردیف_صورتحساب,
+    c.Name AS نام_خریدار,
+    c.CustomerType AS نوع_خریدار,
+    c.NationalId AS شناسه_ملی_خریدار,
+    c.Phone AS تلفن_ثابت_خریدار,
+    c.Mobile AS موبایل_خریدار,
+    c.Address AS آدرس_خریدار
+FROM Invoices i
+JOIN InvoiceItems ii ON i.Id = ii.InvoceId
+JOIN Goods g ON ii.GoodId = g.Id
+JOIN Customers c ON i.CustomerId = c.id
+WHERE ii.UnitPrice > 50000
+AND i.SendDateJalali >= '1400-10-01'
+AND i.SendDateJalali <= '1400-10-31'
+AND c.Name = N'شرکت محورسازان شیراز';
+--############################
+
+--############################
+--چه شرکت هایی بیشترین خرید ها را از ما داشته اند
+
+SELECT
+    c.Name AS نام_خریدار,
+    COUNT(i.Id) AS تعداد_صورتحسابها
+FROM Invoices i
+JOIN Customers c ON i.CustomerId = c.id
+WHERE i.ShowInList = 1
+GROUP BY c.Name
+ORDER BY تعداد_صورتحسابها DESC;
+--############################
+
+--############################
+--پر فروش ترین محصول ما در تابستان ۱۴۰۰ چه محصولی بوده و چقدر فروخته ایم
+
+SELECT
+    g.UserCode AS کد_کالا,
+    g.Description AS شرح_کالا,
+    SUM(ii.Quantity) AS تعداد_فروش,
+    SUM(ii.TotalPrice) AS مجموع_مبلغ_فروش
+FROM InvoiceItems ii
+JOIN Invoices i ON ii.InvoceId = i.Id
+JOIN Goods g ON ii.GoodId = g.Id
+WHERE i.SendDateJalali >= '1400-06-21'
+  AND i.SendDateJalali <= '1400-09-20'
+GROUP BY g.UserCode, g.Description
+ORDER BY SUM(ii.Quantity) DESC
+LIMIT 1;
+--############################
+
+--############################
+--چه شرکت هایی هنوز به طور کامل با ما تسویه نکرده اند
+
+SELECT DISTINCT
+    c.Name AS نام_خریدار,
+    c.CustomerType AS نوع_خریدار,
+    c.NationalId AS شناسه_ملی_خریدار,
+    c.PostalCode AS کد_پستی_خریدار,
+    c.BranchNumber AS کد_شعبه_خریدار,
+    c.EconomicCode AS کد_اقتصادی_خریدار,
+    c.IsActive AS فعال_غیرفعال,
+    c.Phone AS تلفن_ثابت_خریدار,
+    c.Mobile AS موبایل_خریدار,
+    c.Address AS آدرس_خریدار,
+    c.Description AS توضیحات_خریدار,
+    c.LastUpdateJalali AS زمان_تغییر_خریدار,
+    c.UpdateBy AS کاربر_تغییر_خریدار
+FROM Customers c
+LEFT JOIN Invoices i ON c.id = i.CustomerId
+WHERE i.Id IS NULL;
+--############################
+
+--############################
+--در سال ۱۴۰۰ مجموعا چقدر مالیات پرداخت کرده ایم
+
+SELECT
+    SUM(i.TotalTax) AS مجموع_مالیات_پرداختی
+FROM Invoices i
+WHERE YEAR(CAST(i.SendDateJalali AS DATE)) = 1400;
+--############################
+
+--############################
+--اخرین فاکتور شرکت پگاه گستران شرق کدام است
+
+SELECT
+    i.Id AS شناسه_فاکتور,
+    i.FactorNumber AS شماره_سریال_فاکتور,
+    i.SendDateJalali AS تاریخ_فاکتور,
+    c.Name AS نام_خریدار,
+    CASE i.PaymentMethod
+        WHEN 1 THEN N'نقدی'
+        WHEN 2 THEN N'نسیه'
+        WHEN 3 THEN N'نقدی_نسیه'
+    END AS روش_پرداخت,
+    i.TotalPrice AS جمع_مبلغ_فاکتور,
+    i.TotalTax AS جمع_مالیات_فاکتور,
+    i.NetValue AS جمع_خالص_فاکتور
+FROM Invoices i
+JOIN Customers c ON i.CustomerId = c.id
+WHERE c.EconomicCode = 'پگاه گستران شرق'
+ORDER BY i.SendDateJalali DESC
+OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;
+--############################
+
+--############################
+--محبوب ترین محصولات کدام اند
+
+SELECT
+    g.Id AS کد_کالا,
+    g.UserCode AS کد_دستی_کالا,
+    g.Description AS شرح_کالا,
+    SUM(ii.Quantity) AS مجموع_تعداد_فروش,
+    SUM(ii.TotalPrice) AS مجموع_مبلغ_فروش
+FROM InvoiceItems ii
+JOIN Goods g ON ii.GoodId = g.Id
+JOIN Invoices i ON ii.InvoceId = i.Id
+WHERE i.ShowInList = 1
+GROUP BY g.Id, g.UserCode, g.Description
+ORDER BY مجموع_تعداد_فروش DESC, مجموع_مبلغ_فروش DESC
+LIMIT 10;
+--############################
+
+--############################
+--جزئیات اخرین خرید شرکت آبا صنعت آواژنگ را نمایش بده
+
+SELECT
+    c.Name AS نام_خریدار,
+    i.TaxId AS شناسه_یکتای_صورتحساب,
+    i.FactorNumber AS شماره_سریال_صورتحساب,
+    i.SendDateJalali AS تاریخ_صورتحساب,
+    i.PaymentMethod AS روش_پرداخت,
+    CASE i.PaymentMethod
+        WHEN 1 THEN N'نقدی'
+        WHEN 2 THEN N'نسیه'
+        WHEN 3 THEN N'نقدی_نسیه'
+    END AS توضیح_روش_پرداخت,
+    i.Naghdi AS مبلغ_نقدی,
+    i.Nesiye AS مبلغ_نسیه,
+    i.TotalPrice AS جمع_مبلغ_صورتحساب,
+    i.TotalTax AS جمع_مالیات_صورتحساب,
+    i.NetValue AS جمع_خالص_صورتحساب,
+    i.Subject AS موضوع_صورتحساب,
+    CASE i.Subject
+        WHEN 1 THEN N'اصلی'
+        WHEN 2 THEN N'اصلاحی'
+        WHEN 3 THEN N'ابطالی'
+        WHEN 4 THEN N'برگشت_از_فروش'
+    END AS توضیح_موضوع_صورتحساب,
+    i.DeliveryStatus AS وضعیت_ارسال,
+    CASE i.DeliveryStatus
+        WHEN 0 THEN N'ارسال_نشده'
+        WHEN 1 THEN N'صف_ارسال'
+        WHEN 2 THEN N'منتظر_استعلام'
+        WHEN 3 THEN N'تایید_شده'
+        WHEN 4 THEN N'رد_شده'
+    END AS توضیح_وضعیت_ارسال,
+    i.Description AS توضیحات_فاکتور
+FROM Invoices i
+JOIN Customers c ON i.CustomerId = c.id
+WHERE c.EconomicCode = 'آبا صنعت آواژنگ'
+ORDER BY i.SendDateJalali DESC
+OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;
+--############################
+
+--############################
+--ایا شرکتی به اسم  خزر از ما خرید کرده است ؟
+
+SELECT DISTINCT
+    c.Name AS نام_خریدار
+FROM Customers c
+JOIN Invoices i ON c.id = i.CustomerId
+WHERE c.Name = N'خزر';
+--############################
+
+--############################
+--تا به حال چه شرکت هایی از ما خرید کرده اند
+
+SELECT DISTINCT
+    c.Name AS نام_خریدار,
+    c.CustomerType AS نوع_خریدار,
+    c.NationalId AS شناسه_ملی_خریدار,
+    c.PostalCode AS کد_پستی_خریدار,
+    c.BranchNumber AS کد_شعبه_خریدار,
+    c.EconomicCode AS کد_اقتصادی_خریدار,
+    c.IsActive AS فعال_غیرفعال,
+    c.Phone AS تلفن_ثابت_خریدار,
+    c.Mobile AS موبایل_خریدار,
+    c.Address AS آدرس_خریدار,
+    c.Description AS توضیحات_خریدار,
+    c.LastUpdateJalali AS زمان_تغییر_خریدار,
+    c.UpdateBy AS کاربر_تغییر_خریدار
+FROM Customers c
+INNER JOIN Invoices i ON c.id = i.CustomerId
+ORDER BY c.Name;
+--############################
+
+--############################
+--در یک ماه گذشته چه شرکت هایی از ما خرید کرده اند
+
+SELECT DISTINCT
+    c.Name AS نام_خریدار,
+    c.CustomerType AS نوع_خریدار,
+    c.NationalId AS شناسه_ملی_خریدار,
+    c.PostalCode AS کد_پستی_خریدار,
+    c.BranchNumber AS کد_شعبه_خریدار,
+    c.EconomicCode AS کد_اقتصادی_خریدار,
+    c.IsActive AS فعال_غیرفعال,
+    c.Phone AS تلفن_ثابت_خریدار,
+    c.Mobile AS موبایل_خریدار,
+    c.Address AS آدرس_خریدار,
+    c.Description AS توضیحات_خریدار,
+    c.LastUpdateJalali AS زمان_تغییر_خریدار,
+    c.UpdateBy AS کاربر_تغییر_خریدار
+FROM Customers c
+INNER JOIN Invoices i ON c.id = i.CustomerId
+WHERE i.SendDateJalali >= DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)
+  AND i.SendDateJalali < DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()) + 1, 1)
+--############################
+
+--############################
+--در یک سال گذشته چند فاکتور صادر شده
+
+SELECT COUNT(*) AS تعداد_فاکتور_صادرشده
+FROM Invoices
+WHERE CAST(SendDateJalali AS DATE) >= DATEADD(YEAR, -1, GETDATE())
+--############################
+
+--############################
+--مجموع فروش و مالیات شرکت تا الان چقدر بوده
+
+SELECT
+    SUM(i.TotalPrice) AS مجموع_فروش,
+    SUM(i.TotalTax) AS مجموع_مالیات
+FROM Invoices i
+WHERE i.ShowInList = 1;
+--############################
+
+--############################
+--اطلاعات تمام مشتریانی که در اسمشان تحقیق است را نمایش بده
+
+SELECT
+    c.[Name] AS نام_خریدار,
+    c.[CustomerType] AS نوع_خریدار,
+    c.[NationalId] AS شناسه_ملی_خریدار,
+    c.[PostalCode] AS کد_پستی_خریدار,
+    c.[BranchNumber] AS کد_شعبه_خریدار,
+    c.[EconomicCode] AS کد_اقتصادی_خریدار,
+    c.[IsActive] AS فعال_غیرفعال,
+    c.[Phone] AS تلفن_ثابت_خریدار,
+    c.[Mobile] AS موبایل_خریدار,
+    c.[Address] AS آدرس_خریدار,
+    c.[Description] AS توضیحات_خریدار,
+    c.[LastUpdateJalali] AS زمان_تغییر_خریدار,
+    c.[UpdateBy] AS کاربر_تغییر_خریدار
+FROM [dbo].[Customers] c
+WHERE c.[Name] LIKE N'%تحقیق%';
+--############################
+
+--############################
+--شماره موبایل و شماره ثابت ده مشتری برتر را نمایش بده
+
+SELECT
+    c.Mobile AS موبایل_خریدار,
+    c.Phone AS تلفن_ثابت_خریدار
+FROM Customers c
+ORDER BY c.id DESC
+OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY;
+--############################
+
+--############################
+--این ماه از محصول الف چقدر بیشتر از ماه قبل فروخته ایم
+
+SELECT
+    i1.InvoiceDate AS ماه_ماه_قبل,
+    i2.InvoiceDate AS ماه_ماه_اکنون,
+    SUM(i1.Quantity) AS مجموع_فروش_ماه_ماه_قبل,
+    SUM(i2.Quantity) AS مجموع_فروش_ماه_ماه_اکنون,
+    SUM(i2.Quantity) - SUM(i1.Quantity) AS تفاوت_فروش_ماه_ماه_اکنون
+FROM Invoices i1
+JOIN InvoiceItems ii1 ON i1.Id = ii1.InvoceId
+JOIN Goods g1 ON ii1.GoodId = g1.Id
+JOIN Invoices i2
+JOIN InvoiceItems ii2 ON i2.Id = ii2.InvoceId
+JOIN Goods g2 ON ii2.GoodId = g2.Id
+WHERE g1.UserCode = 'الف'
+AND g2.UserCode = 'الف'
+AND i1.InvoiceDate >= DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()) - 1, 1)
+AND i1.InvoiceDate < DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)
+AND i2.InvoiceDate >= DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)
+AND i2.InvoiceDate < DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()) + 1, 1)
+GROUP BY i1.InvoiceDate, i2.InvoiceDate
+--############################
+
+--############################
+--مجموع مبلغ و تعداد فروش هر محصول را به تفکیک محصول نمایش دهید
+
+SELECT
+    g.Id AS کد_کالا,
+    g.UserCode AS کد_دستی_کالا,
+    g.Description AS شرح_کالا,
+    SUM(ii.Quantity) AS مجموع_تعداد_فروش,
+    SUM(ii.TotalPrice) AS مجموع_مبلغ_فروش
+FROM InvoiceItems ii
+JOIN Goods g ON ii.GoodId = g.Id
+GROUP BY g.Id, g.UserCode, g.Description;
+--############################
+
+--############################
+--جزئیات فاکتور هایی که شامل محصولی با نام لپتاپ است
+
+SELECT
+    i.Id AS شناسه_فاکتور,
+    i.TaxId AS شناسه_یکتای_فاکتور,
+    i.FactorNumber AS شماره_سریال_فاکتور,
+    i.SendDateJalali AS تاریخ_فاکتور,
+    c.Name AS نام_خریدار,
+    g.UserDescription AS نام_کالا,
+    ii.Quantity AS تعداد,
+    ii.UnitPrice AS قیمت_واحد,
+    ii.TotalPrice AS مبلغ_ردیف,
+    ii.TotalTax AS مالیات_ردیف,
+    ii.NetValue AS مبلغ_خالص_ردیف
+FROM Invoices i
+JOIN InvoiceItems ii ON i.Id = ii.InvoceId
+JOIN Goods g ON ii.GoodId = g.Id
+JOIN Customers c ON i.CustomerId = c.id
+WHERE g.UserDescription = N'لپتاپ'
+--############################
+
+--############################
+--محصولاتی که قیمت انها بیشتر از ۱۰۰۰۰۰۰ تومان است را نمایش بده
+
+SELECT
+    g.Id AS کد_کالا,
+    g.UserDescription AS عنوان_کالا,
+    g.Description AS شرح_دارایی_کالا,
+    g.TaxSystemCode AS کد_دارایی_کالا,
+    g.TaxRate AS نرخ_مالیات,
+    g.GoodUnit AS کلید_خارجی_واحد,
+    i.UnitPrice AS قیمت_واحد_هرردیف_صورتحساب
+FROM Goods g
+JOIN InvoiceItems i ON g.Id = i.GoodId
+WHERE i.UnitPrice > 1000000
+--############################
+
+--############################
+--فاکتور هایی که در تاریخ فلان صادر شده اند
+
+SELECT
+    i.Id AS شناسه_فاکتور,
+    i.TaxId AS شناسه_یکتای_صورتحساب,
+    i.FactorNumber AS شماره_سریال_صورتحساب,
+    i.SendDateJalali AS تاریخ_صورتحساب,
+    c.Name AS نام_خریدار,
+    CASE i.InvoiceType
+        WHEN 1 THEN N'نوع_اول'
+        WHEN 2 THEN N'نوع_دوم'
+        WHEN 3 THEN N'نوع_سوم'
+    END AS نوع_صورتحساب,
+    CASE i.Subject
+        WHEN 1 THEN N'اصلی'
+        WHEN 2 THEN N'اصلاحی'
+        WHEN 3 THEN N'ابطالی'
+        WHEN 4 THEN N'برگشت_از_فروش'
+    END AS موضوع_صورتحساب,
+    i.PaymentMethod AS روش_پرداخت,
+    i.Naghdi AS نقدی,
+    i.Nesiye AS نسیه,
+    i.TotalPrice AS جمع_مبلغ_صورتحساب,
+    i.TotalTax AS جمع_مالیات_صورتحساب,
+    i.NetValue AS جمع_خالص_صورتحساب,
+    CASE i.DeliveryStatus
+        WHEN 0 THEN N'ارسال_نشده'
+        WHEN 1 THEN N'صف_ارسال'
+        WHEN 2 THEN N'منتظر_استعلام'
+        WHEN 3 THEN N'تایید_شده'
+        WHEN 4 THEN N'رد_شده'
+    END AS وضعیت_ارسال,
+    i.CustomCode AS شماره_دستی_صورتحساب
+FROM Invoices i
+LEFT JOIN Customers c ON i.CustomerId = c.id
+WHERE i.SendDateJalali = '1400/01/01'
+--############################
+
+--############################
+--تمام محصولاتی که شرکت فلان خریده
+
+SELECT DISTINCT
+    g.Id AS کد_کالا,
+    g.UserDescription AS عنوان_کالا,
+    g.Description AS شرح_دارایی_کالا,
+    gu.Name AS واحد_کالا,
+    g.TaxRate AS نرخ_مالیات,
+    g.TaxSystemCode AS کد_دارایی_کالا
+FROM Goods g
+JOIN GoodUnits gu ON g.GoodUnit = gu.Id
+JOIN Invoices i ON i.CustomerId = c.id
+JOIN InvoiceItems ii ON ii.InvoceId = i.Id
+JOIN Customers c ON c.id = i.CustomerId
+WHERE c.Name = N'شرکت فلان'
+--############################
+
+--############################
+--تمام فاکتور هایی که قیمت انها بیشتر از فلان تومان است
+
+SELECT
+    i.Id AS شناسه_فاکتور,
+    i.TaxId AS شناسه_یکتای_صورتحساب,
+    i.FactorNumber AS شماره_سریال_صورتحساب,
+    i.SendDateJalali AS تاریخ_صورتحساب,
+    i.TotalPrice AS جمع_مبلغ_صورتحساب,
+    c.Name AS نام_خریدار,
+    CASE i.PaymentMethod
+        WHEN 1 THEN N'نقدی'
+        WHEN 2 THEN N'نسیه'
+        WHEN 3 THEN N'نقدی_نسیه'
+    END AS روش_پرداخت,
+    CASE i.DeliveryStatus
+        WHEN 0 THEN N'ارسال نشده'
+        WHEN 1 THEN N'صف ارسال'
+        WHEN 2 THEN N'منتظر استعلام'
+        WHEN 3 THEN N'تایید شده'
+        WHEN 4 THEN N'رد شده'
+    END AS وضعیت_ارسال
+FROM Invoices i
+INNER JOIN Customers c ON i.CustomerId = c.id
+WHERE i.TotalPrice > 1000000000000;
+--############################
+
+--############################
+--تمام فاکتور هایی که در انها محصولی با قیمت بیشتر از فلان است
+
+SELECT
+    i.Id AS شناسه_فاکتور,
+    i.TaxId AS شناسه_یکتای_فاکتور,
+    i.FactorNumber AS شماره_سریال_فاکتور,
+    i.SendDateJalali AS تاریخ_فاکتور,
+    i.PaymentMethod AS روش_پرداخت,
+    i.TotalPrice AS جمع_مبلغ_فاکتور,
+    i.TotalTax AS جمع_مالیات_فاکتور,
+    i.NetValue AS جمع_خالص_فاکتور,
+    c.Name AS نام_خریدار,
+    g.UserCode AS کد_کالا,
+    g.Description AS شرح_کالا,
+    ii.UnitPrice AS قیمت_واحد_ردیف,
+    ii.Quantity AS تعداد_ردیف,
+    ii.TotalPrice AS جمع_مبلغ_ردیف,
+    ii.TotalTax AS مالیات_ردیف,
+    ii.NetValue AS مبلغ_خالص_ردیف
+FROM Invoices i
+INNER JOIN InvoiceItems ii ON i.Id = ii.InvoceId
+INNER JOIN Goods g ON ii.GoodId = g.Id
+INNER JOIN Customers c ON i.CustomerId = c.id
+WHERE ii.UnitPrice > 1000000  -- فرض بر اینکه "فلان" برابر 1000000 است
+ORDER BY i.SendDateJalali DESC, i.Id DESC;
+--############################
+
+--############################
+--تمام فاکتور هایی که در انها بیشتر از ده کالا فروخته شده است
+
+SELECT
+    i.Id AS شناسه_فاکتور,
+    i.FactorNumber AS شماره_سریال_فاکتور,
+    i.SendDateJalali AS تاریخ_فاکتور,
+    COUNT(ii.Id) AS تعداد_کالاها,
+    i.TotalPrice AS جمع_مبلغ_فاکتور,
+    i.TotalTax AS جمع_مالیات_فاکتور,
+    i.NetValue AS جمع_خالص_فاکتور,
+    c.Name AS نام_خریدار,
+    CASE i.InvoiceType
+        WHEN 1 THEN N'نوع اول'
+        WHEN 2 THEN N'نوع دوم'
+        WHEN 3 THEN N'نوع سوم'
+    END AS نوع_فاکتور,
+    CASE i.Subject
+        WHEN 1 THEN N'اصلی'
+        WHEN 2 THEN N'اصلاحی'
+        WHEN 3 THEN N'ابطالی'
+        WHEN 4 THEN N'برگشت از فروش'
+    END AS موضوع_فاکتور,
+    CASE i.PaymentMethod
+        WHEN 1 THEN N'نقدی'
+        WHEN 2 THEN N'نسیه'
+        WHEN 3 THEN N'نقدی_نسیه'
+    END AS روش_پرداخت,
+    i.Naghdi AS مبلغ_نقدی,
+    i.Nesiye AS مبلغ_نسیه,
+    i.CustomCode AS شماره_دستی_فاکتور,
+    i.DeliveryStatus AS وضعیت_ارسال_کد,
+    CASE i.DeliveryStatus
+        WHEN 0 THEN N'ارسال نشده'
+        WHEN 1 THEN N'صف ارسال'
+        WHEN 2 THEN N'منتظر استعلام'
+        WHEN 3 THEN N'تایید شده'
+        WHEN 4 THEN N'رد شده'
+    END AS وضعیت_ارسال,
+    i.Description AS توضیحات_فاکتور
+FROM Invoices i
+INNER JOIN Customers c ON i.CustomerId = c.id
+INNER JOIN InvoiceItems ii ON i.Id = ii.InvoceId
+GROUP BY i.Id, i.FactorNumber, i.SendDateJalali, i.TotalPrice, i.TotalTax, i.NetValue, c.Name, i.InvoiceType, i.Subject, i.PaymentMethod, i.Naghdi, i.Nesiye, i.CustomCode, i.DeliveryStatus, i.Description
+HAVING COUNT(ii.Id) > 10
+ORDER BY i.SendDateJalali DESC;
+--############################
+
+--############################
+--محصولاتی که مجموع فروش انها بیشتر از فلان عدد بوده است
+
+SELECT
+    g.Id AS کد_کالا,
+    g.UserCode AS کد_دستی_کالا,
+    g.Description AS شرح_کالا,
+    SUM(ii.Quantity * ii.UnitPrice) AS مجموع_فروش_کالا
+FROM Goods g
+JOIN InvoiceItems ii ON g.Id = ii.GoodId
+JOIN Invoices i ON ii.InvoceId = i.Id
+WHERE i.ShowInList = 1
+GROUP BY g.Id, g.UserCode, g.Description
+HAVING SUM(ii.Quantity * ii.UnitPrice) > 1000000
+--############################
+
+--############################
+--تمام محصولات به همراه تعداد فروش و مجموع مبلغ فروش آنها را نمایش دهید. این اطلاعات باید به تفکیک هر محصول و بر اساس تاریخ فاکتور مرتب شده باشد.
+
+SELECT
+    g.Id AS کد_کالا,
+    g.UserCode AS کد_دستی_کالا,
+    g.Description AS شرح_کالا,
+    COUNT(ii.Id) AS تعداد_فروش,
+    SUM(ii.TotalPrice) AS مجموع_مبلغ_فروش
+FROM Goods g
+JOIN InvoiceItems ii ON g.Id = ii.GoodId
+JOIN Invoices i ON ii.InvoceId = i.Id
+WHERE i.SendDateJalali >= '1399-01-01' AND i.SendDateJalali <= '1400-12-31'
+GROUP BY g.Id, g.UserCode, g.Description
+ORDER BY g.Id, i.SendDateJalali;
+--############################
+
+--############################
+--مشتریانی که حد اقل ده خرید در سال گذشته داشتند
+
+SELECT
+    c.Name AS نام_خریدار,
+    COUNT(i.Id) AS تعداد_خریدها
+FROM Customers c
+INNER JOIN Invoices i ON c.id = i.CustomerId
+WHERE i.SendDateJalali >= '1399-01-01'
+  AND i.SendDateJalali < '1400-01-01'
+GROUP BY c.Name
+HAVING COUNT(i.Id) >= 10
+--############################
+
+--############################
+--محصولاتی که تا به حال توسط هیچ مشتری ای خریداری نشده اند
+
+SELECT
+    g.Id AS کد_کالا,
+    g.UserCode AS کد_دستی_کالا,
+    g.Description AS شرح_کالا,
+    g.TaxSystemCode AS کد_دارایی_کالا,
+    g.TaxRate AS نرخ_مالیات,
+    g.GoodUnit AS کلید_خارجی_واحد,
+    gu.Name AS عنوان_واحد
+FROM Goods g
+LEFT JOIN InvoiceItems ii ON g.Id = ii.GoodId
+LEFT JOIN Invoices i ON ii.InvoceId = i.Id
+LEFT JOIN Customers c ON i.CustomerId = c.id
+WHERE ii.Id IS NULL;
+--############################
+
+--############################
+--لیست تمام محصولات به همراه مقدار موجودی و تعداد فروخته شده از هر کدام
+
+SELECT
+    g.Id AS کد_کالا,
+    g.UserCode AS کد_دستی_کالا,
+    g.Description AS شرح_کالا,
+    g.TaxSystemCode AS کد_دارایی_کالا,
+    COALESCE(SUM(ii.Quantity), 0) AS تعداد_فروخته_شده,
+    COALESCE(SUM(ii.Quantity), 0) AS موجودی_کالا
+FROM Goods g
+LEFT JOIN InvoiceItems ii ON g.Id = ii.GoodId
+GROUP BY g.Id, g.UserCode, g.Description, g.TaxSystemCode;
+--############################
+
+--############################
+--مشتریانی که در ماه گذشته سه فاکتور یا بیشتر خرید داشته اند
+
+SELECT
+    c.Name AS نام_خریدار,
+    COUNT(i.Id) AS تعداد_فاکتورها
+FROM Customers c
+INNER JOIN Invoices i ON c.id = i.CustomerId
+WHERE i.SendDateJalali >= DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()) - 1, 1)
+  AND i.SendDateJalali < DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)
+GROUP BY c.Name
+HAVING COUNT(i.Id) >= 3;
+--############################
+
+--############################
+--هر مشتری کدام محصول را بیشتر خریده است
+
+SELECT
+    c.Name AS نام_خریدار,
+    g.UserCode AS کد_دستی_کالا,
+    SUM(ii.Quantity) AS مجموع_تعداد_خرید
+FROM Customers c
+JOIN Invoices i ON c.id = i.CustomerId
+JOIN InvoiceItems ii ON i.Id = ii.InvoceId
+JOIN Goods g ON ii.GoodId = g.Id
+WHERE i.ShowInList = 1
+GROUP BY c.Name, g.UserCode
+ORDER BY مجموع_تعداد_خرید DESC;
+--############################
+
+--############################
+--لیست تمام سفارشاتی که در بازه یک ماه گذشته ثبت شده اند
+
+SELECT
+    i.Id AS شناسه_صورتحساب,
+    i.TaxId AS شناسه_یکتای_صورتحساب,
+    i.FactorNumber AS شماره_سریال_صورتحساب,
+    i.SendDateJalali AS تاریخ_صورتحساب,
+    c.Name AS نام_خریدار,
+    CASE i.PaymentMethod
+        WHEN 1 THEN N'نقدی'
+        WHEN 2 THEN N'نسیه'
+        WHEN 3 THEN N'نقدی_نسیه'
+    END AS روش_پرداخت,
+    i.Naghdi AS مبلغ_نقدی,
+    i.Nesiye AS مبلغ_نسیه,
+    i.TotalPrice AS جمع_مبلغ_صورتحساب,
+    i.TotalTax AS جمع_مالیات_صورتحساب,
+    i.NetValue AS جمع_خالص_صورتحساب,
+    CASE i.DeliveryStatus
+        WHEN 0 THEN N'ارسال نشده'
+        WHEN 1 THEN N'صف ارسال'
+        WHEN 2 THEN N'منتظر استعلام'
+        WHEN 3 THEN N'تایید شده'
+        WHEN 4 THEN N'رد شده'
+    END AS وضعیت_ارسال,
+    i.CustomCode AS شماره_دستی_صورتحساب
+FROM Invoices i
+INNER JOIN Customers c ON i.CustomerId = c.id
+WHERE i.SendDateJalali >= DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)
+  AND i.SendDateJalali < DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()) + 1, 1)
+--############################
+
+--############################
+--درامد خالص در ماه گذشته چقدر بوده است
+
+SELECT
+    SUM(d.TotalDebt) AS درامد_خالص_ماه_گذشته
+FROM
+    AccountingDocs d
+JOIN
+    DocItems di ON d.Id = di.DocId
+WHERE
+    d.CreationDateJalali >= DATEFROMPARTS(YEAR(DATEADD(MONTH, -1, GETDATE())), MONTH(DATEADD(MONTH, -1, GETDATE())), 1)
+    AND d.CreationDateJalali < DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)
+    AND d.Kind IN (1, 2, 3, 4, 5, 6, 7)
+    AND d.Status IN (1, 2, 3, 4)
+    AND d.IsApproved = 1;
+--############################
