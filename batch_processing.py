@@ -51,7 +51,7 @@ def write_queries(
             f_out.write("\n")
 
 def main():
-    prompts_file = "samples/samples.txt"   # current directory
+    prompts_file = "samples/samples.txt"
     output_file = "results/queries.txt"
 
     prompts = load_prompts(prompts_file)
