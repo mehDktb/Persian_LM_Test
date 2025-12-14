@@ -1,0 +1,1 @@
+MODEL_QWEN_PATH = "/home/ubuntu/Qwen3-VL-8B-Instruct"
