@@ -1,6 +1,7 @@
 torch>=2.2.0
 transformers>=4.41.0
+datasets>=2.15.0       # provides load_dataset
 qwen-vl-utils>=0.0.8
 bitsandbytes>=0.43.0
 flask>=3.0.0
-accelerate
+accelerate>=0.24.0
