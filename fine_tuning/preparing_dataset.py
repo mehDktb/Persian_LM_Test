@@ -1,6 +1,3 @@
-import os
-import sys
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import re
 import json
 from textwrap import dedent
@@ -8,9 +5,8 @@ from system_contents.Qwen_sql_system_content import SQL_SYSTEM_PROMPT
 
 
 
-INPUT_TXT = "/home/mehdi_ktb/Documents/ECC/Persian_LM_Test/results/query_getdate.txt"  # Change to your actual TXT file name/path
-OUTPUT_JSONL = "dataset/train.jsonl"  # This is the file your fine-tuning code expects
-
+INPUT_TXT = "./results/query_getdate.txt"
+OUTPUT_JSONL = "dataset/train.jsonl"
 
 
 def extract_examples(text):

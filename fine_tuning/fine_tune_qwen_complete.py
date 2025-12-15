@@ -1,9 +1,12 @@
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import torch
 from constants.paths import MODEL_QWEN_PATH
 from datasets import load_dataset
 from transformers import (
     AutoTokenizer,
-    AutoModelForCausalLM,
+    AutoModelForVision2Seq,
     Trainer,
     TrainingArguments
 )
@@ -28,7 +31,7 @@ def load_model_and_tokenizer(model_path, fp16=True):
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    model = AutoModelForCausalLM.from_pretrained(
+    model = AutoModelForVision2Seq.from_pretrained(
         model_path,
         trust_remote_code=True,
         torch_dtype=torch.float16 if fp16 else torch.float32,
