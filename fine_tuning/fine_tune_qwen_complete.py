@@ -22,7 +22,7 @@ BATCH_SIZE = 1
 GRAD_ACCUM = 8
 EPOCHS = 3
 LR = 2e-5
-FP16 = True
+FP16 = False
 
 
 
@@ -34,7 +34,7 @@ def load_model_and_tokenizer(model_path, fp16=True):
     model = AutoModelForVision2Seq.from_pretrained(
         model_path,
         trust_remote_code=True,
-        torch_dtype=torch.float16 if fp16 else torch.float32,
+        dtype=torch.float16 if fp16 else torch.float32,
         device_map="auto"
     )
     model.train()
