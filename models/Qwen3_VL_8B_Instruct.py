@@ -1,5 +1,5 @@
 from .model_manager import _schedule_auto_unload, get_model
-from system_contents.Qwen_sql_system_content import SQL_SYSTEM_PROMPT
+from system_contents.Qwen_sql_system_content import SQL_SYSTEM_PROMPT, SIMPLE_SYS_CONTENT
 
 
 
@@ -10,7 +10,7 @@ def qwen_sql_from_nl(user_text: str) -> str:
     """
     model, processor = get_model("qwen")
 
-    system_prompt = SQL_SYSTEM_PROMPT
+    system_prompt = SIMPLE_SYS_CONTENT
 
     # Use list-of-segments format for both system and user
     messages = [

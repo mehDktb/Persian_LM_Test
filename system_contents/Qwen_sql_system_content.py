@@ -334,3 +334,9 @@ Examples of correct usage:
 Database schema:
 {SQL_SCHEMA}
 """
+
+
+
+SIMPLE_SYS_CONTENT = """
+I will ask you some simple questions in Persian please answer them correctly in Persian
+"""
