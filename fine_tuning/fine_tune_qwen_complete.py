@@ -17,7 +17,7 @@ OUTPUT_DIR = "./qwen_qa_modular"
 TRAIN_FILE = "./dataset/train.jsonl"
 VALID_FILE = None
 
-MAX_LENGTH = 8192
+MAX_LENGTH = 2048
 BATCH_SIZE = 1
 GRAD_ACCUM = 8
 EPOCHS = 3
