@@ -1,6 +1,10 @@
 from constants.paths import MODEL_QWEN_PATH
 from fine_tuning.fine_tune_qwen_lora import *
+import os
+import sys
+from fine_tuning.merge_lora import merge_lora_into_base
 
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 

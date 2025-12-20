@@ -1,5 +1,6 @@
 import os
 import sys
+import gc
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import torch
 from peft import PeftModel
@@ -132,44 +133,12 @@ def train_model(model, tokenizer, dataset, training_args):
     trainer.save_model(output_dir)
     tokenizer.save_pretrained(output_dir)
     print("✅ QA fine-tuning completed!")
+    trainer.model.cpu()
+    if hasattr(trainer, "optimizer") and trainer.optimizer is not None:
+        trainer.optimizer.zero_grad(set_to_none=True)
+
+    del trainer
+    del model
+    gc.collect()
 
 
-def merge_lora_into_base(
-    base_model_path: str,
-    adapter_path: str,
-    merged_out_path: str,
-    dtype: torch.dtype = torch.float16,
-):
-    os.makedirs(merged_out_path, exist_ok=True)
-
-    base_model = AutoModelForVision2Seq.from_pretrained(
-        base_model_path,
-        trust_remote_code=True,
-        torch_dtype=dtype,
-        device_map="auto",
-        low_cpu_mem_usage=True,
-    )
-
-    peft_model = PeftModel.from_pretrained(
-        base_model,
-        adapter_path,
-        device_map="auto",
-    )
-
-    merged_model = peft_model.merge_and_unload()
-
-    merged_model.save_pretrained(merged_out_path, safe_serialization=True)
-
-    try:
-        processor = AutoProcessor.from_pretrained(base_model_path, trust_remote_code=True)
-        processor.save_pretrained(merged_out_path)
-    except Exception as e:
-        print(f"[warn] AutoProcessor save failed: {e}")
-
-    try:
-        tokenizer = AutoTokenizer.from_pretrained(base_model_path, trust_remote_code=True)
-        tokenizer.save_pretrained(merged_out_path)
-    except Exception as e:
-        print(f"[warn] AutoTokenizer save failed: {e}")
-
-    print(f"✅ Merged model saved to: {merged_out_path}")
