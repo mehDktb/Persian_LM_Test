@@ -2,7 +2,7 @@ import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import torch
-from constants.paths import MODEL_QWEN_PATH
+from peft import PeftModel
 from datasets import load_dataset
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 from transformers import (
@@ -10,31 +10,17 @@ from transformers import (
     AutoModelForVision2Seq,
     Trainer,
     TrainingArguments,
-    BitsAndBytesConfig
+    BitsAndBytesConfig,
+    AutoProcessor,
 )
-
-
-MODEL_PATH = MODEL_QWEN_PATH
-OUTPUT_DIR = "./qwen_qa_modular"
-TRAIN_FILE = "./dataset/train.jsonl"
-VALID_FILE = None
-
-MAX_LENGTH = 2048
-BATCH_SIZE = 1
-GRAD_ACCUM = 8
-EPOCHS = 3
-LR = 2e-5
-FP16 = False
 
 
 
 def load_model_and_tokenizer(model_path, fp16=True):
-    # Load tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    # 4-bit quantization config
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
         bnb_4bit_use_double_quant=True,
@@ -42,7 +28,6 @@ def load_model_and_tokenizer(model_path, fp16=True):
         bnb_4bit_compute_dtype=torch.float16 if fp16 else torch.float32
     )
 
-    # Load model in 4-bit
     model = AutoModelForVision2Seq.from_pretrained(
         model_path,
         trust_remote_code=True,
@@ -50,14 +35,13 @@ def load_model_and_tokenizer(model_path, fp16=True):
         device_map="auto"
     )
 
-    # Prepare model for k-bit training
     model = prepare_model_for_kbit_training(model)
 
     # LoRA config
     lora_config = LoraConfig(
-        r=16,                     # Rank
-        lora_alpha=32,             # Scaling factor
-        target_modules=[           # Modules to apply LoRA
+        r=16,
+        lora_alpha=32,
+        target_modules=[
             "q_proj", "k_proj", "v_proj", "o_proj",
             "gate_proj", "up_proj", "down_proj"
         ],
@@ -66,10 +50,8 @@ def load_model_and_tokenizer(model_path, fp16=True):
         task_type="CAUSAL_LM"
     )
 
-    # Add LoRA adapters
     model = get_peft_model(model, lora_config)
 
-    # Print trainable params
     model.print_trainable_parameters()
 
     return model, tokenizer
@@ -83,7 +65,7 @@ def load_qa_dataset(train_file, valid_file=None):
 
 
 def preprocess_sql_qa(example, tokenizer, max_length=2048):
-    # Combine system prompt + user question
+
     user_part = (
         "<|im_start|>user\n"
         f"{example['system_prompt']}\n{example['question']}\n"
@@ -93,16 +75,13 @@ def preprocess_sql_qa(example, tokenizer, max_length=2048):
 
     assistant_part = f"{example['answer']}\n<|im_end|>"
 
-    # Tokenize
     user_tokens = tokenizer(user_part, add_special_tokens=False)
     assistant_tokens = tokenizer(assistant_part, add_special_tokens=False)
 
     input_ids = user_tokens["input_ids"] + assistant_tokens["input_ids"]
 
-    # Mask user tokens
     labels = [-100] * len(user_tokens["input_ids"]) + assistant_tokens["input_ids"]
 
-    # Truncate
     input_ids = input_ids[:max_length]
     labels = labels[:max_length]
 
@@ -130,45 +109,17 @@ def get_data_collator(tokenizer):
     return data_collator
 
 
-
-def get_training_args(output_dir):
-    return TrainingArguments(
-        output_dir=output_dir,
-        overwrite_output_dir=True,
-        per_device_train_batch_size=BATCH_SIZE,
-        gradient_accumulation_steps=GRAD_ACCUM,
-        num_train_epochs=EPOCHS,
-        learning_rate=LR,
-        fp16=FP16,
-        logging_steps=10,
-        save_steps=500,
-        save_total_limit=2,
-        report_to="none",
-        gradient_checkpointing=True,
-        optim="paged_adamw_8bit",   # Optimizer for quantized + LoRA
-        lr_scheduler_type="cosine",
-        warmup_ratio=0.03,
-        weight_decay=0.01,
-        dataloader_num_workers=4
-    )
-
-
-
-def train_model(model, tokenizer, dataset, output_dir):
-    # Preprocess dataset
+def train_model(model, tokenizer, dataset, training_args):
+    max_length = training_args["max_length"]
+    output_dir = training_args["output_dir"]
     dataset = dataset.map(
-        lambda x: preprocess_sql_qa(x, tokenizer, MAX_LENGTH),
+        lambda x: preprocess_sql_qa(x, tokenizer, max_length),
         remove_columns=dataset["train"].column_names,
         num_proc=4
     )
 
-    # Create data collator
     data_collator = get_data_collator(tokenizer)
 
-    # Create training args
-    training_args = get_training_args(output_dir)
-
-    # Trainer
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -176,16 +127,49 @@ def train_model(model, tokenizer, dataset, output_dir):
         data_collator=data_collator
     )
 
-    # Train
     trainer.train()
 
-    # Save
     trainer.save_model(output_dir)
     tokenizer.save_pretrained(output_dir)
     print("✅ QA fine-tuning completed!")
 
 
-if __name__ == "__main__":
-    model, tokenizer = load_model_and_tokenizer(MODEL_PATH, FP16)
-    dataset = load_qa_dataset(TRAIN_FILE, VALID_FILE)
-    train_model(model, tokenizer, dataset, OUTPUT_DIR)
+def merge_lora_into_base(
+    base_model_path: str,
+    adapter_path: str,
+    merged_out_path: str,
+    dtype: torch.dtype = torch.float16,
+):
+    os.makedirs(merged_out_path, exist_ok=True)
+
+    base_model = AutoModelForVision2Seq.from_pretrained(
+        base_model_path,
+        trust_remote_code=True,
+        torch_dtype=dtype,
+        device_map="auto",
+        low_cpu_mem_usage=True,
+    )
+
+    peft_model = PeftModel.from_pretrained(
+        base_model,
+        adapter_path,
+        device_map="auto",
+    )
+
+    merged_model = peft_model.merge_and_unload()
+
+    merged_model.save_pretrained(merged_out_path, safe_serialization=True)
+
+    try:
+        processor = AutoProcessor.from_pretrained(base_model_path, trust_remote_code=True)
+        processor.save_pretrained(merged_out_path)
+    except Exception as e:
+        print(f"[warn] AutoProcessor save failed: {e}")
+
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(base_model_path, trust_remote_code=True)
+        tokenizer.save_pretrained(merged_out_path)
+    except Exception as e:
+        print(f"[warn] AutoTokenizer save failed: {e}")
+
+    print(f"✅ Merged model saved to: {merged_out_path}")
