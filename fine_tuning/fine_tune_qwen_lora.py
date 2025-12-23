@@ -121,9 +121,14 @@ def train_model(model, tokenizer, dataset, training_args):
 
     data_collator = get_data_collator(tokenizer)
 
+    ta_kwargs = dict(training_args)
+    ta_kwargs.pop("max_length", None)
+
+    args = TrainingArguments(**ta_kwargs)
+
     trainer = Trainer(
         model=model,
-        args=training_args,
+        args=args,
         train_dataset=dataset["train"],
         data_collator=data_collator
     )
