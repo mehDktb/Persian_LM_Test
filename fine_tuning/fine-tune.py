@@ -1,4 +1,4 @@
-from constants.paths import MODEL_QWEN_PATH
+from constants.paths import MODEL_QWEN_PATH, MODEL_QWEN_PATH_FINE_TUNED
 from fine_tuning.fine_tune_qwen_lora import *
 import os
 import sys
@@ -9,8 +9,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 MODEL_PATH = MODEL_QWEN_PATH
-LORA_ADAPTER_PATH = "./qwen_qa_modular"
-MERGED_OUT_PATH = "./qwen_merged_full"
+LORA_ADAPTER_PATH = "models/qwen_qa_lora_adapter"
+MERGED_OUT_PATH = MODEL_QWEN_PATH_FINE_TUNED
 TRAIN_FILE = "./dataset/train.jsonl"
 
 
