@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
-from models.Qwen3_VL_8B_Instruct import qwen_chat, qwen_sql_from_nl
-from models.Llama_31_8B_Instruct import llama_chat
-from models.gpt_oss_20B import gpt_oss_chat
+from model_manager.Qwen3_VL_8B_Instruct import qwen_chat, qwen_sql_from_nl
+from model_manager.Llama_31_8B_Instruct import llama_chat
+from model_manager.gpt_oss_20B import gpt_oss_chat
 
 app = Flask(__name__)
 

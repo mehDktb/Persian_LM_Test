@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from models.Qwen3_VL_8B_Instruct import qwen_sql_from_nl
+from model_manager.Qwen3_VL_8B_Instruct import qwen_sql_from_nl
 
 
 
