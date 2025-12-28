@@ -25,8 +25,8 @@ def ask_openai(prompt: str, model: str = "gpt-5.2", system_content: str = SQL_SY
 
 
 def main():
-    user_action = input("which system content do want to use?\n1)sql_generation\t2)dataset_generation")
-    if user_action not in [1,2]:
+    user_action = input("which system content do want to use?\n1)sql_generation\t2)dataset_generation\n->")
+    if user_action not in ["1","2"]:
         raise ValueError("You have to only enter 1 or 2")
     elif user_action == 1:
         system_content = SQL_SYSTEM_PROMPT
