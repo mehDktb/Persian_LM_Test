@@ -1,7 +1,7 @@
 import torch
 from threading import Timer
 from transformers import Qwen3VLForConditionalGeneration, AutoProcessor, AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
-from constants.paths import MODEL_QWEN_PATH
+from constants.paths import MODEL_QWEN_PATH, MODEL_QWEN_PATH_FINE_TUNED
 MODEL_TTL_SECONDS = 600  # 10 minutes
 
 
@@ -54,9 +54,9 @@ def _schedule_auto_unload():
 
 def _load_qwen():
     """Actually load Qwen model + processor into memory."""
-    model_name = MODEL_QWEN_PATH
+    model_name = MODEL_QWEN_PATH_FINE_TUNED
 
-    print("[INFO] Loading Qwen model into memory...")
+    print(f"[INFO] Loading {model_name} model into memory...")
     model = Qwen3VLForConditionalGeneration.from_pretrained(
         model_name,
         dtype="auto",
