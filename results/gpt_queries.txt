@@ -1,0 +1,763 @@
+--############################
+--محصولاتی که قیمت انها بیشتر از پنجاه هزار تومان است و در ماه ابان ۱۴۰۰ به شرکت محورسازان شیراز فروخته ایم.
+
+SELECT DISTINCT
+    g.Id AS شناسه_کالا,
+    g.UserCode AS کد_دلخواه_کالا,
+    g.UserDescription AS عنوان_کالا,
+    ii.UnitPrice AS قیمت_واحد,
+    i.Id AS شناسه_صورتحساب,
+    i.FactorNumber AS شماره_سریال_صورتحساب,
+    i.SendDateJalali AS تاریخ_صورتحساب,
+    c.Name AS نام_خریدار
+FROM dbo.InvoiceItems AS ii
+INNER JOIN dbo.Invoices AS i
+    ON i.Id = ii.InvoceId
+INNER JOIN dbo.Customers AS c
+    ON c.Id = i.CustomerId
+INNER JOIN dbo.Goods AS g
+    ON g.Id = ii.GoodId
+WHERE
+    c.Name = N'شرکت محورسازان شیراز'
+    AND ii.UnitPrice > 50000
+    AND i.SendDateJalali LIKE N'1400/08/%';
+--############################
+
+--############################
+--چه شرکت هایی بیشترین خرید ها را از ما داشته اند
+
+SELECT TOP (10)
+    c.Id AS شناسه_خریدار,
+    c.Name AS نام_خریدار,
+    COUNT(i.Id) AS تعداد_صورتحساب,
+    SUM(ISNULL(i.NetValue, 0)) AS جمع_خالص_خرید
+FROM dbo.Invoices AS i
+INNER JOIN dbo.Customers AS c
+    ON c.id = i.CustomerId
+WHERE
+    c.CustomerType = 2
+    AND i.ShowInList = 1
+GROUP BY
+    c.Id,
+    c.Name
+ORDER BY
+    SUM(ISNULL(i.NetValue, 0)) DESC,
+    COUNT(i.Id) DESC;
+--############################
+
+--############################
+--پر فروش ترین محصول ما در تابستان ۱۴۰۰ چه محصولی بوده و چقدر فروخته ایم
+
+SELECT TOP (1)
+    g.Id AS شناسه_کالا,
+    g.UserCode AS کد_دلخواه_کالا,
+    g.UserDescription AS عنوان_کالا,
+    SUM(ii.Quantity) AS مقدار_فروخته_شده
+FROM dbo.InvoiceItems AS ii
+INNER JOIN dbo.Invoices AS i
+    ON i.Id = ii.InvoceId
+INNER JOIN dbo.Goods AS g
+    ON g.Id = ii.GoodId
+WHERE
+    i.SendDateJalali >= N'1400/04/01'
+    AND i.SendDateJalali < N'1400/07/01'
+    AND i.ShowInList = 1
+GROUP BY
+    g.Id,
+    g.UserCode,
+    g.UserDescription
+ORDER BY
+    SUM(ii.Quantity) DESC;
+--############################
+
+--############################
+--چه شرکت هایی هنوز به طور کامل با ما تسویه نکرده اند
+
+SELECT
+    c.id AS شناسه_خریدار,
+    c.Name AS نام_خریدار,
+    c.NationalId AS شناسه_ملی_خریدار,
+    SUM(COALESCE(i.NetValue, 0)) AS جمع_خالص_صورتحساب,
+    SUM(COALESCE(i.Naghdi, 0) + COALESCE(i.Nesiye, 0)) AS جمع_مبالغ_پرداختی,
+    SUM(COALESCE(i.NetValue, 0)) - SUM(COALESCE(i.Naghdi, 0) + COALESCE(i.Nesiye, 0)) AS مانده_تسویه
+FROM dbo.Customers c
+INNER JOIN dbo.Invoices i
+    ON i.CustomerId = c.id
+WHERE
+    c.CustomerType = 2
+    AND c.IsActive = 1
+    AND i.ShowInList = 1
+GROUP BY
+    c.id,
+    c.Name,
+    c.NationalId
+HAVING
+    SUM(COALESCE(i.NetValue, 0)) - SUM(COALESCE(i.Naghdi, 0) + COALESCE(i.Nesiye, 0)) > 0
+ORDER BY
+    مانده_تسویه DESC;
+--############################
+
+--############################
+--در سال ۱۴۰۰ مجموعا چقدر مالیات پرداخت کرده ایم
+
+SELECT
+    SUM(i.TotalTax) AS مجموع_مالیات_پرداخت_شده
+FROM dbo.Invoices AS i
+WHERE
+    i.SendDateJalali >= N'1400/01/01'
+    AND i.SendDateJalali < N'1401/01/01'
+    AND i.ShowInList = 1;
+--############################
+
+--############################
+--اخرین فاکتور شرکت پگاه گستران شرق کدام است
+
+SELECT TOP (1)
+    i.Id AS شناسه_صورتحساب,
+    i.TaxId AS شناسه_یکتای_صورتحساب,
+    i.FactorNumber AS شماره_سریال_صورتحساب,
+    i.CustomCode AS شماره_دستی_صورتحساب,
+    i.SendDateJalali AS تاریخ_صورتحساب,
+    i.TotalPrice AS جمع_مبلغ_صورتحساب,
+    i.NetValue AS جمع_خالص_صورتحساب,
+    i.TotalTax AS جمع_مالیات_صورتحساب,
+    i.TotalDiscount AS جمع_تخفیف_صورتحساب,
+    CASE i.Subject
+        WHEN 1 THEN N'اصلی'
+        WHEN 2 THEN N'اصلاحی'
+        WHEN 3 THEN N'ابطالی'
+        WHEN 4 THEN N'برگشت از فروش'
+    END AS موضوع_صورتحساب,
+    CASE i.DeliveryStatus
+        WHEN 0 THEN N'ارسال نشده'
+        WHEN 1 THEN N'صف ارسال'
+        WHEN 2 THEN N'منتظر استعلام'
+        WHEN 3 THEN N'تایید شده'
+        WHEN 4 THEN N'رد شده'
+    END AS وضعیت_ارسال
+FROM dbo.Invoices i
+INNER JOIN dbo.Customers c
+    ON c.id = i.CustomerId
+WHERE c.Name = N'شرکت پگاه گستران شرق'
+ORDER BY
+    i.Id DESC;
+--############################
+
+--############################
+--محبوب ترین محصولات کدام اند
+
+SELECT TOP (10)
+    g.Id AS شناسه_کالا,
+    g.UserCode AS کد_دلخواه_کالا,
+    g.UserDescription AS عنوان_کالا,
+    SUM(ii.Quantity) AS مجموع_تعداد_فروش,
+    COUNT(DISTINCT ii.InvoceId) AS تعداد_صورتحساب
+FROM dbo.InvoiceItems AS ii
+INNER JOIN dbo.Goods AS g
+    ON g.Id = ii.GoodId
+INNER JOIN dbo.Invoices AS i
+    ON i.Id = ii.InvoceId
+WHERE i.ShowInList = 1
+GROUP BY
+    g.Id,
+    g.UserCode,
+    g.UserDescription
+ORDER BY
+    SUM(ii.Quantity) DESC,
+    COUNT(DISTINCT ii.InvoceId) DESC,
+    g.Id ASC;
+--############################
+
+--############################
+--جزئیات اخرین خرید شرکت آبا صنعت آواژنگ را نمایش بده
+
+SELECT TOP (1)
+    i.Id AS شناسه_صورتحساب,
+    i.TaxId AS شناسه_یکتای_صورتحساب,
+    i.FactorNumber AS شماره_سریال_صورتحساب,
+    i.SendDateJalali AS تاریخ_صورتحساب,
+    c.Name AS نام_خریدار,
+    CASE i.InvoiceType
+        WHEN 1 THEN N'نوع اول'
+        WHEN 2 THEN N'نوع دوم'
+        WHEN 3 THEN N'نوع سوم'
+    END AS نوع_صورتحساب,
+    CASE i.Subject
+        WHEN 1 THEN N'اصلی'
+        WHEN 2 THEN N'اصلاحی'
+        WHEN 3 THEN N'ابطالی'
+        WHEN 4 THEN N'برگشت از فروش'
+    END AS موضوع_صورتحساب,
+    CASE i.PaymentMethod
+        WHEN 1 THEN N'نقدی'
+        WHEN 2 THEN N'نسیه'
+        WHEN 3 THEN N'نقدی نسیه'
+    END AS روش_پرداخت,
+    i.TotalPrice AS جمع_مبلغ_صورتحساب,
+    i.TotalDiscount AS جمع_تخفیف_صورتحساب,
+    i.TotalTax AS جمع_مالیات_صورتحساب,
+    i.NetValue AS جمع_خالص_صورتحساب
+FROM dbo.Invoices i
+INNER JOIN dbo.Customers c
+    ON c.id = i.CustomerId
+WHERE c.Name = N'آبا صنعت آواژنگ'
+ORDER BY i.Id DESC;
+--############################
+
+--############################
+--ایا شرکتی به اسم  خزر از ما خرید کرده است ؟
+
+SELECT
+    c.Id AS شناسه_خریدار,
+    c.Name AS نام_خریدار,
+    COUNT(i.Id) AS تعداد_صورتحساب,
+    SUM(COALESCE(i.NetValue, 0)) AS جمع_خالص_صورتحساب
+FROM dbo.Customers AS c
+LEFT JOIN dbo.Invoices AS i
+    ON i.CustomerId = c.id
+WHERE c.Name LIKE N'%خزر%'
+GROUP BY
+    c.Id,
+    c.Name
+HAVING COUNT(i.Id) > 0;
+--############################
+
+--############################
+--تا به حال چه شرکت هایی از ما خرید کرده اند
+
+SELECT
+    c.Id AS شناسه_خریدار,
+    c.Name AS نام_شرکت,
+    c.NationalId AS شناسه_ملی,
+    c.EconomicCode AS کد_اقتصادی
+FROM dbo.Invoices i
+INNER JOIN dbo.Customers c
+    ON c.id = i.CustomerId
+WHERE
+    c.CustomerType = 2
+GROUP BY
+    c.Id,
+    c.Name,
+    c.NationalId,
+    c.EconomicCode
+ORDER BY
+    c.Name;
+--############################
+
+--############################
+--در یک ماه گذشته چه شرکت هایی از ما خرید کرده اند
+
+SELECT
+    c.Id AS شناسه_خریدار,
+    c.Name AS نام_شرکت,
+    c.NationalId AS شناسه_ملی,
+    COUNT(i.Id) AS تعداد_فاکتور
+FROM dbo.Invoices AS i
+INNER JOIN dbo.Customers AS c
+    ON c.id = i.CustomerId
+WHERE
+    c.CustomerType = 2
+    AND i.ShowInList = 1
+    AND TRY_CONVERT(date, i.SendDateJalali) >= DATEADD(MONTH, -1, CAST(GETDATE() AS date))
+    AND TRY_CONVERT(date, i.SendDateJalali) < DATEADD(DAY, 1, CAST(GETDATE() AS date))
+GROUP BY
+    c.Id,
+    c.Name,
+    c.NationalId
+ORDER BY
+    COUNT(i.Id) DESC,
+    c.Name ASC;
+--############################
+
+--############################
+--در یک سال گذشته چند فاکتور صادر شده
+
+```sql
+SELECT
+    COUNT_BIG(i.Id) AS تعداد_فاکتور_صادر_شده_در_یک_سال_گذشته
+FROM dbo.Invoices AS i
+WHERE
+    TRY_CONVERT(date, i.SendDateJalali) >= DATEADD(YEAR, -1, CAST(GETDATE() AS date))
+    AND TRY_CONVERT(date, i.SendDateJalali) < CAST(GETDATE() AS date);
+```
+--############################
+
+--############################
+--مجموع فروش و مالیات شرکت تا الان چقدر بوده
+
+SELECT
+    SUM(CASE WHEN i.ShowInList = 1 THEN ISNULL(i.TotalPrice, 0) ELSE 0 END) AS مجموع_فروش,
+    SUM(CASE WHEN i.ShowInList = 1 THEN ISNULL(i.TotalTax, 0) ELSE 0 END) AS مجموع_مالیات
+FROM dbo.Invoices AS i;
+--############################
+
+--############################
+--اطلاعات تمام مشتریانی که در اسمشان تحقیق است را نمایش بده
+
+```sql
+SELECT
+    c.id AS شناسه_مشتری,
+    c.Name AS نام_خریدار,
+    CASE c.CustomerType
+        WHEN 1 THEN N'حقیقی'
+        WHEN 2 THEN N'حقوقی'
+    END AS نوع_خریدار,
+    c.NationalId AS شناسه_ملی_خریدار,
+    c.Mobile AS موبایل_خریدار,
+    c.Phone AS تلفن_ثابت_خریدار,
+    c.Address AS آدرس_خریدار,
+    CASE c.IsActive
+        WHEN 0 THEN N'غیرفعال'
+        WHEN 1 THEN N'فعال'
+    END AS فعال_غیرفعال
+FROM dbo.Customers AS c
+WHERE c.Name LIKE N'%تحقیق%';
+```
+--############################
+
+--############################
+--شماره موبایل و شماره ثابت ده مشتری برتر را نمایش بده
+
+SELECT TOP (10)
+    c.Id AS شناسه_خریدار,
+    c.Name AS نام_خریدار,
+    c.Mobile AS موبایل_خریدار,
+    c.Phone AS تلفن_ثابت_خریدار
+FROM dbo.Customers AS c
+INNER JOIN dbo.Invoices AS i
+    ON i.CustomerId = c.Id
+WHERE i.ShowInList = 1
+GROUP BY
+    c.Id,
+    c.Name,
+    c.Mobile,
+    c.Phone
+ORDER BY
+    SUM(ISNULL(i.NetValue, 0)) DESC;
+--############################
+
+--############################
+--این ماه از محصول الف چقدر بیشتر از ماه قبل فروخته ایم
+
+WITH Sales AS
+(
+    SELECT
+        SUM(CASE WHEN i.SendDateJalali >= CONVERT(nvarchar(20), DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1), 23)
+                  AND i.SendDateJalali <  CONVERT(nvarchar(20), DATEADD(MONTH, 1, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)), 23)
+                 THEN ii.Quantity ELSE 0 END) AS QtyThisMonth,
+        SUM(CASE WHEN i.SendDateJalali >= CONVERT(nvarchar(20), DATEADD(MONTH, -1, DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1)), 23)
+                  AND i.SendDateJalali <  CONVERT(nvarchar(20), DATEFROMPARTS(YEAR(GETDATE()), MONTH(GETDATE()), 1), 23)
+                 THEN ii.Quantity ELSE 0 END) AS QtyLastMonth
+    FROM dbo.InvoiceItems ii
+    INNER JOIN dbo.Invoices i
+        ON i.Id = ii.InvoceId
+    INNER JOIN dbo.Goods g
+        ON g.Id = ii.GoodId
+    WHERE g.UserDescription = N'الف'
+      AND i.ShowInList = 1
+)
+SELECT
+    CAST(QtyThisMonth AS decimal(25,8)) AS مقدار_فروش_این_ماه,
+    CAST(QtyLastMonth AS decimal(25,8)) AS مقدار_فروش_ماه_قبل,
+    CAST(QtyThisMonth - QtyLastMonth AS decimal(25,8)) AS اختلاف_فروش
+FROM Sales;
+--############################
+
+--############################
+--مجموع مبلغ و تعداد فروش هر محصول را به تفکیک محصول نمایش دهید
+
+```sql
+SELECT
+    g.Id AS شناسه_کالا,
+    g.UserCode AS کد_دلخواه_کالا,
+    g.UserDescription AS عنوان_کالا,
+    SUM(ii.Quantity) AS مجموع_تعداد_فروش,
+    SUM(COALESCE(ii.TotalPrice, 0)) AS مجموع_مبلغ_فروش
+FROM dbo.InvoiceItems AS ii
+INNER JOIN dbo.Goods AS g
+    ON g.Id = ii.GoodId
+INNER JOIN dbo.Invoices AS i
+    ON i.Id = ii.InvoceId
+WHERE i.ShowInList = 1
+GROUP BY
+    g.Id,
+    g.UserCode,
+    g.UserDescription
+ORDER BY
+    SUM(COALESCE(ii.TotalPrice, 0)) DESC,
+    SUM(ii.Quantity) DESC;
+```
+--############################
+
+--############################
+--جزئیات فاکتور هایی که شامل محصولی با نام لپتاپ است
+
+SELECT
+    i.Id AS شناسه_صورتحساب,
+    i.TaxId AS شناسه_یکتای_صورتحساب,
+    i.FactorNumber AS شماره_سریال_صورتحساب,
+    i.SendDateJalali AS تاریخ_صورتحساب,
+    c.Name AS نام_خریدار,
+    g.UserDescription AS عنوان_کالا,
+    ii.Quantity AS تعداد,
+    ii.UnitPrice AS قیمت_واحد,
+    ii.Discount AS تخفیف,
+    ii.TotalPrice AS جمع_مبلغ,
+    ii.TotalTax AS مالیات,
+    ii.NetValue AS مبلغ_خالص
+FROM dbo.Invoices AS i
+INNER JOIN dbo.InvoiceItems AS ii
+    ON ii.InvoceId = i.Id
+INNER JOIN dbo.Goods AS g
+    ON g.Id = ii.GoodId
+LEFT JOIN dbo.Customers AS c
+    ON c.id = i.CustomerId
+WHERE g.UserDescription LIKE N'%لپتاپ%';
+--############################
+
+--############################
+--محصولاتی که قیمت انها بیشتر از ۱۰۰۰۰۰۰ تومان است را نمایش بده
+
+SELECT
+    g.Id AS شناسه_کالا,
+    g.UserCode AS کد_دلخواه_کالا,
+    g.UserDescription AS عنوان_کالا,
+    g.TaxSystemCode AS کد_دارایی_کالا,
+    g.Description AS شرح_دارایی_کالا,
+    ii.UnitPrice AS قیمت_واحد
+FROM dbo.InvoiceItems AS ii
+INNER JOIN dbo.Goods AS g
+    ON g.Id = ii.GoodId
+WHERE ii.UnitPrice > 1000000;
+--############################
+
+--############################
+--فاکتور هایی که در تاریخ فلان صادر شده اند
+
+SELECT
+    i.Id AS شناسه_صورتحساب,
+    i.TaxId AS شناسه_یکتای_صورتحساب,
+    i.FactorNumber AS شماره_سریال_صورتحساب,
+    i.SendDateJalali AS تاریخ_صورتحساب,
+    i.CustomCode AS شماره_دستی_صورتحساب,
+    i.TotalPrice AS جمع_مبلغ_صورتحساب,
+    i.NetValue AS جمع_خالص_صورتحساب
+FROM dbo.Invoices AS i
+WHERE i.SendDateJalali = @SendDateJalali;
+--############################
+
+--############################
+--تمام محصولاتی که شرکت فلان خریده
+
+SELECT DISTINCT
+    g.Id AS شناسه_کالا,
+    g.UserCode AS کد_دلخواه_کالا,
+    g.UserDescription AS عنوان_کالا,
+    g.TaxSystemCode AS کد_دارایی_کالا
+FROM dbo.Invoices i
+INNER JOIN dbo.Customers c
+    ON c.id = i.CustomerId
+INNER JOIN dbo.InvoiceItems ii
+    ON ii.InvoceId = i.Id
+INNER JOIN dbo.Goods g
+    ON g.Id = ii.GoodId
+WHERE c.CustomerType = 2
+  AND c.Name LIKE N'%فلان%';
+--############################
+
+--############################
+--تمام فاکتور هایی که قیمت انها بیشتر از فلان تومان است
+
+SELECT
+    i.Id AS شناسه_صورتحساب,
+    i.TaxId AS شناسه_یکتای_صورتحساب,
+    i.FactorNumber AS شماره_سریال_صورتحساب,
+    i.SendDateJalali AS تاریخ_صورتحساب,
+    i.TotalPrice AS جمع_مبلغ_صورتحساب
+FROM dbo.Invoices AS i
+WHERE i.TotalPrice > @Amount
+ORDER BY i.TotalPrice DESC;
+--############################
+
+--############################
+--تمام فاکتور هایی که در انها محصولی با قیمت بیشتر از فلان است
+
+SELECT DISTINCT
+    i.Id AS شناسه_صورتحساب,
+    i.TaxId AS شناسه_یکتای_صورتحساب,
+    i.FactorNumber AS شماره_سریال_صورتحساب,
+    i.SendDateJalali AS تاریخ_صورتحساب,
+    ii.UnitPrice AS قیمت_واحد_ردیف
+FROM dbo.Invoices AS i
+INNER JOIN dbo.InvoiceItems AS ii
+    ON ii.InvoceId = i.Id
+WHERE ii.UnitPrice > @Price;
+--############################
+
+--############################
+--تمام فاکتور هایی که در انها بیشتر از ده کالا فروخته شده است
+
+SELECT
+    i.Id AS شناسه_صورتحساب,
+    i.TaxId AS شناسه_یکتای_صورتحساب,
+    i.FactorNumber AS شماره_سریال_صورتحساب,
+    i.SendDateJalali AS تاریخ_صورتحساب,
+    SUM(ii.Quantity) AS جمع_تعداد_کالا
+FROM dbo.Invoices AS i
+INNER JOIN dbo.InvoiceItems AS ii
+    ON ii.InvoceId = i.Id
+GROUP BY
+    i.Id,
+    i.TaxId,
+    i.FactorNumber,
+    i.SendDateJalali
+HAVING
+    SUM(ii.Quantity) > 10;
+--############################
+
+--############################
+--محصولاتی که مجموع فروش انها بیشتر از فلان عدد بوده است
+
+SELECT
+    g.Id AS شناسه_کالا,
+    g.UserCode AS کد_دلخواه_کالا,
+    g.UserDescription AS عنوان_کالا,
+    SUM(COALESCE(ii.NetValue, 0)) AS مجموع_فروش
+FROM dbo.InvoiceItems AS ii
+INNER JOIN dbo.Goods AS g
+    ON g.Id = ii.GoodId
+INNER JOIN dbo.Invoices AS i
+    ON i.Id = ii.InvoceId
+WHERE
+    i.ShowInList = 1
+GROUP BY
+    g.Id,
+    g.UserCode,
+    g.UserDescription
+HAVING
+    SUM(COALESCE(ii.NetValue, 0)) > @MinTotalSales;
+--############################
+
+--############################
+--تمام محصولات به همراه تعداد فروش و مجموع مبلغ فروش آنها را نمایش دهید. این اطلاعات باید به تفکیک هر محصول و بر اساس تاریخ فاکتور مرتب شده باشد.
+
+```sql
+SELECT
+    g.Id AS شناسه_کالا,
+    g.UserCode AS کد_کالا,
+    g.UserDescription AS عنوان_کالا,
+    i.SendDateJalali AS تاریخ_فاکتور,
+    SUM(ii.Quantity) AS تعداد_فروش,
+    SUM(ISNULL(ii.TotalPrice, 0)) AS مجموع_مبلغ_فروش
+FROM dbo.Goods AS g
+LEFT JOIN dbo.InvoiceItems AS ii
+    ON ii.GoodId = g.Id
+LEFT JOIN dbo.Invoices AS i
+    ON i.Id = ii.InvoceId
+GROUP BY
+    g.Id,
+    g.UserCode,
+    g.UserDescription,
+    i.SendDateJalali
+ORDER BY
+    i.SendDateJalali,
+    g.UserDescription;
+```
+--############################
+
+--############################
+--مشتریانی که حد اقل ده خرید در سال گذشته داشتند
+
+```sql
+SELECT
+    c.id AS شناسه_مشتری,
+    c.Name AS نام_مشتری,
+    COUNT(i.Id) AS تعداد_خرید_سال_گذشته
+FROM dbo.Customers AS c
+INNER JOIN dbo.Invoices AS i
+    ON i.CustomerId = c.id
+WHERE
+    i.ShowInList = 1
+    AND TRY_CONVERT(date, i.SendDateJalali) >= DATEADD(YEAR, -1, CAST(GETDATE() AS date))
+    AND TRY_CONVERT(date, i.SendDateJalali) < CAST(GETDATE() AS date)
+GROUP BY
+    c.id,
+    c.Name
+HAVING
+    COUNT(i.Id) >= 10
+ORDER BY
+    COUNT(i.Id) DESC,
+    c.Name ASC;
+```
+--############################
+
+--############################
+--محصولاتی که تا به حال توسط هیچ مشتری ای خریداری نشده اند
+
+SELECT
+    g.Id AS شناسه_کالا,
+    g.UserCode AS کد_دلخواه_کالا,
+    g.UserDescription AS عنوان_کالا,
+    g.TaxSystemCode AS کد_دارایی_کالا
+FROM dbo.Goods AS g
+WHERE NOT EXISTS
+(
+    SELECT 1
+    FROM dbo.InvoiceItems AS ii
+    INNER JOIN dbo.Invoices AS i
+        ON i.Id = ii.InvoceId
+    WHERE ii.GoodId = g.Id
+      AND i.CustomerId IS NOT NULL
+);
+--############################
+
+--############################
+--لیست تمام محصولات به همراه مقدار موجودی و تعداد فروخته شده از هر کدام
+
+SELECT
+    g.Id AS شناسه_کالا,
+    g.UserCode AS کد_دلخواه_کالا,
+    g.UserDescription AS عنوان_کالا,
+    g.TaxSystemCode AS کد_دارایی_کالا,
+    g.Description AS شرح_دارایی_کالا,
+    CAST(0 AS decimal(25, 8)) AS مقدار_موجودی,
+    COALESCE(SUM(ii.Quantity), CAST(0 AS decimal(25, 8))) AS تعداد_فروخته_شده
+FROM dbo.Goods AS g
+LEFT JOIN dbo.InvoiceItems AS ii
+    ON ii.GoodId = g.Id
+GROUP BY
+    g.Id,
+    g.UserCode,
+    g.UserDescription,
+    g.TaxSystemCode,
+    g.Description
+ORDER BY
+    g.UserDescription;
+--############################
+
+--############################
+--مشتریانی که در ماه گذشته سه فاکتور یا بیشتر خرید داشته اند
+
+SELECT
+    c.Id AS شناسه_مشتری,
+    c.Name AS نام_خریدار,
+    COUNT(i.Id) AS تعداد_فاکتور_ماه_گذشته
+FROM dbo.Invoices AS i
+INNER JOIN dbo.Customers AS c
+    ON c.Id = i.CustomerId
+WHERE
+    i.CustomerId IS NOT NULL
+    AND i.ShowInList = 1
+    AND TRY_CONVERT(date, i.SendDateJalali) >= DATEADD(MONTH, DATEDIFF(MONTH, 0, DATEADD(MONTH, -1, GETDATE())), 0)
+    AND TRY_CONVERT(date, i.SendDateJalali) <  DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0)
+GROUP BY
+    c.Id,
+    c.Name
+HAVING
+    COUNT(i.Id) >= 3
+ORDER BY
+    COUNT(i.Id) DESC,
+    c.Name ASC;
+--############################
+
+--############################
+--هر مشتری کدام محصول را بیشتر خریده است
+
+```sql
+WITH CustomerGoodAgg AS
+(
+    SELECT
+        c.id AS شناسه_مشتری,
+        c.Name AS نام_مشتری,
+        g.Id AS شناسه_کالا,
+        g.UserCode AS کد_کالا,
+        g.UserDescription AS عنوان_کالا,
+        SUM(ii.Quantity) AS جمع_تعداد_خرید
+    FROM dbo.Invoices i
+    INNER JOIN dbo.Customers c
+        ON c.id = i.CustomerId
+    INNER JOIN dbo.InvoiceItems ii
+        ON ii.InvoceId = i.Id
+    INNER JOIN dbo.Goods g
+        ON g.Id = ii.GoodId
+    WHERE i.ShowInList = 1
+    GROUP BY
+        c.id,
+        c.Name,
+        g.Id,
+        g.UserCode,
+        g.UserDescription
+),
+Ranked AS
+(
+    SELECT
+        a.شناسه_مشتری,
+        a.نام_مشتری,
+        a.شناسه_کالا,
+        a.کد_کالا,
+        a.عنوان_کالا,
+        a.جمع_تعداد_خرید,
+        DENSE_RANK() OVER
+        (
+            PARTITION BY a.شناسه_مشتری
+            ORDER BY a.جمع_تعداد_خرید DESC, a.شناسه_کالا ASC
+        ) AS رتبه
+    FROM CustomerGoodAgg a
+)
+SELECT
+    r.شناسه_مشتری AS شناسه_مشتری,
+    r.نام_مشتری AS نام_مشتری,
+    r.شناسه_کالا AS شناسه_کالا,
+    r.کد_کالا AS کد_کالا,
+    r.عنوان_کالا AS عنوان_کالا,
+    r.جمع_تعداد_خرید AS بیشترین_تعداد_خرید
+FROM Ranked r
+WHERE r.رتبه = 1
+ORDER BY
+    r.نام_مشتری ASC,
+    r.شناسه_مشتری ASC;
+```
+--############################
+
+--############################
+--لیست تمام سفارشاتی که در بازه یک ماه گذشته ثبت شده اند
+
+SELECT
+    i.Id AS شناسه_صورتحساب,
+    i.TaxId AS شناسه_یکتای_صورتحساب,
+    i.FactorNumber AS شماره_سریال_صورتحساب,
+    i.SendDateJalali AS تاریخ_صورتحساب,
+    i.CustomerId AS شناسه_خریدار,
+    i.TotalPrice AS جمع_مبلغ_صورتحساب,
+    i.NetValue AS جمع_خالص_صورتحساب,
+    i.DeliveryStatus AS وضعیت_ارسال_کد,
+    CASE i.DeliveryStatus
+        WHEN 0 THEN N'ارسال نشده'
+        WHEN 1 THEN N'صف ارسال'
+        WHEN 2 THEN N'منتظر استعلام'
+        WHEN 3 THEN N'تایید شده'
+        WHEN 4 THEN N'رد شده'
+    END AS وضعیت_ارسال
+FROM dbo.Invoices AS i
+WHERE
+    TRY_CONVERT(date, i.SendDateJalali) >= DATEADD(MONTH, -1, CONVERT(date, GETDATE()))
+    AND TRY_CONVERT(date, i.SendDateJalali) < DATEADD(DAY, 1, CONVERT(date, GETDATE()))
+ORDER BY
+    TRY_CONVERT(date, i.SendDateJalali) DESC,
+    i.Id DESC;
+--############################
+
+--############################
+--درامد خالص در ماه گذشته چقدر بوده است
+
+```sql
+SELECT
+    SUM(i.NetValue) AS درآمد_خالص_ماه_گذشته
+FROM dbo.Invoices AS i
+WHERE
+    i.ShowInList = 1
+    AND TRY_CONVERT(date, i.SendDateJalali) >= DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()) - 1, 0)
+    AND TRY_CONVERT(date, i.SendDateJalali) <  DATEADD(MONTH, DATEDIFF(MONTH, 0, GETDATE()), 0);
+```
+--############################
+

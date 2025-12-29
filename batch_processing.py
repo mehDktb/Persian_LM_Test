@@ -1,7 +1,9 @@
 from pathlib import Path
 
 from fine_tuning.gpt_dataset_answer_generator import ask_openai
-# from model_manager.Qwen3_VL_8B_Instruct import qwen_sql_from_nl
+
+
+from model_manager.Qwen3_VL_8B_Instruct import qwen_sql_from_nl
 
 
 
@@ -61,7 +63,7 @@ def main():
         print(f"No prompts found in {prompts_file}")
         return
 
-    write_queries(prompts, output_file, model="gpt")
+    write_queries(prompts, output_file, model="Qwen")
 
     print(f"Done. Results written to {output_file}")
 
