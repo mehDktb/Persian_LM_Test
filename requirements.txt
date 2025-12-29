@@ -6,3 +6,4 @@ bitsandbytes>=0.43.0
 flask>=3.0.0
 accelerate>=0.24.0
 peft
+openai
